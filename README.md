@@ -20,7 +20,8 @@ Interactive pieces and media from Wicked Agile, at **https://mikeparcewski.githu
 
 An Astro site at the repo root, wearing the family chrome from
 [wicked-web](https://github.com/mikeparcewski/wicked-web) (a git dependency pinned by commit in
-`package-lock.json`; with a `wicked-web` checkout beside this repo, dev uses that source).
+`package-lock.json`). With a `wicked-web` checkout beside this repo, local dev and builds use that
+source instead; CI and the deploy have no such checkout, so they always build the pinned commit.
 
 ```bash
 npm ci
@@ -33,21 +34,29 @@ change, install its exact commit: `npm install "github:mikeparcewski/wicked-web#
 
 ## Switch to bits.wickedagile.com
 
-The address lives in two single values: `SITE` and `BASE` in `astro.config.mjs` (this site), and `BITS`
-in wicked-web's `src/data/family.js` (the family header, footer and promo card). When DNS is available:
+The address lives in two places, each a single value: `SITE` and `BASE` in `astro.config.mjs` (this
+site), and `BITS` in wicked-web's `src/data/family.js` (the family header, footer and promo card).
 
-1. **DNS (Route 53, the wickedagile.com zone):** UPSERT `bits.wickedagile.com` as a `CNAME` to
-   `mikeparcewski.github.io`, with the TTL the `wc` and `wg` records use. Check it resolves
-   (`dig +short bits.wickedagile.com`).
-2. **This repo, in one PR:** set `SITE = 'https://bits.wickedagile.com'` and `BASE = '/'`, and add
-   `public/CNAME` containing the line `bits.wickedagile.com` (`npm test` checks a CNAME ships exactly when
-   `BASE` is `'/'`). Update the URLs at the top of this README.
-3. **Pages settings:** set the custom domain:
+1. **Protect the name.** Verify `wickedagile.com` for the account first: GitHub Settings → Pages →
+   Add a verified domain, then add the TXT record it gives (`_github-pages-challenge-mikeparcewski`) in
+   Route 53. Without it, another account could claim `bits.wickedagile.com` between step 2's DNS record
+   and step 4's Pages setting. (As of 2026-11-02 there is no such TXT record.)
+2. **DNS (Route 53, the wickedagile.com zone):** UPSERT `bits.wickedagile.com` as a `CNAME` to
+   `mikeparcewski.github.io`, with the TTL the `wc` and `wg` records use. Check it resolves:
+   `dig +short bits.wickedagile.com`.
+3. **wicked-web:** set `BITS = 'https://bits.wickedagile.com/'` (the promo's `LATEST_BIT.href` follows it)
+   and merge. Nothing changes on any site until it re-pins.
+4. **This repo, one PR, merged right after the domain is set:** set `SITE = 'https://bits.wickedagile.com'`
+   and `BASE = '/'`, add `public/CNAME` with the line `bits.wickedagile.com` (`npm test` checks a CNAME
+   ships exactly when `BASE` is `'/'`), re-pin wicked-web to step 3's commit, and update the URLs at the
+   top of this README. Once its CI is green, set the custom domain and merge straight away:
    `gh api -X PUT repos/mikeparcewski/wicked-bits/pages -f cname=bits.wickedagile.com`.
-   Wait for the certificate (`gh api repos/mikeparcewski/wicked-bits/pages --jq .https_certificate.state`
-   reads `approved`), then enforce HTTPS: `gh api -X PUT repos/mikeparcewski/wicked-bits/pages -F https_enforced=true`.
-   The old github.io URL then redirects to the new domain.
-4. **wicked-web:** set `BITS = 'https://bits.wickedagile.com/'` (the promo's `LATEST_BIT.href` follows it),
-   merge, then re-pin wicked-web here and in the family sites.
-5. **Verify** with a cache-buster (the Pages CDN lags about 10 minutes):
+   An Actions deploy takes the domain from this setting, not the CNAME file. Between the setting and the
+   deploy, the domain serves the old `/wicked-bits/` paths, so keep that gap to minutes. The github.io
+   URL then redirects to the domain.
+5. **HTTPS:** wait for the certificate (`gh api repos/mikeparcewski/wicked-bits/pages --jq
+   .https_certificate.state` reads `approved`), then enforce it, keeping the domain in the same call:
+   `gh api -X PUT repos/mikeparcewski/wicked-bits/pages -f cname=bits.wickedagile.com -F https_enforced=true`.
+6. **The family sites:** re-pin wicked-web in each, so their header, footer and promo point at the domain.
+7. **Verify** with a cache-buster (the Pages CDN lags about 10 minutes):
    `https://bits.wickedagile.com/?cb=1` and `https://bits.wickedagile.com/the-work-factory/?cb=1` serve 200.
