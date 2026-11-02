@@ -79,15 +79,17 @@ test('the reference check itself catches every escaping form', () => {
   html(); // needs dist
   const cases = [
     '<link rel="stylesheet" href="../missing.css">',          // a relative climb out of the base
-    '<a href=/wicked-bits/../other/>x</a>',                     // a climb inside the path
+    `<a href=${BASE}../other/>x</a>`,                           // a climb inside the path
     `<img src='nope.png'>`,                                     // a missing file
     '<style>.x{background:url(/escape.png)}</style>',           // CSS url()
     '<style>@import "/outside.css";</style>',                  // CSS @import
-    '<img srcset="/escape.png 1x, /wicked-bits/nope2.png 2x">', // srcset candidates
-    '<a href="/wicked-bits/%2e%2e%2fpackage.json">x</a>',       // an encoded climb out of dist
+    `<img srcset="/escape.png 1x, ${BASE}nope2.png 2x">`,       // srcset candidates
+    `<a href="${BASE}%2e%2e%2fpackage.json">x</a>`,             // an encoded climb out of dist
   ];
   for (const c of cases) assert.equal(checkText(c, PAGE).length > 0, true, c);
-  assert.equal(checkText('<img srcset="/escape.png 1x, /wicked-bits/nope2.png 2x">', PAGE).length, 2);
+  assert.equal(checkText(`<img srcset="/escape.png 1x, ${BASE}nope2.png 2x">`, PAGE).length, 2);
+  // the encoded climb is caught as an escape, not only as a missing file, wherever the base sits
+  assert.match(checkText(`<a href="${BASE}%2e%2e%2fpackage.json">x</a>`, PAGE).join(), /escapes dist/);
   assert.deepEqual(checkText(`<a href="#top">x</a><a href="https://wickedagile.com">y</a><img src="${BASE}favicon.svg">`, PAGE), []);
 });
 
