@@ -1,0 +1,17 @@
+{
+  "name": "wicked-bits",
+  "type": "module",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro",
+    "test": "node --test tests/site.test.mjs"
+  },
+  "dependencies": {
+    "astro": "^7.3.2",
+    "wicked-web": "github:mikeparcewski/wicked-web#cecfe2e88d63d0461bad85aff93b9d59f310499f"
+  }
+}

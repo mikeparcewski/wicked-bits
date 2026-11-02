@@ -1,0 +1,978 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#071821">
+<meta name="author" content="Mike Parcewski">
+<meta name="description" content="Job in. Crew out. A playable scrolling factory where you can scan jobs, wake temporary AI workers, trip the production line, and teach the next shift.">
+<meta property="og:title" content="THE WORK | The One-Shift Factory">
+<meta property="og:description" content="You don't build the agent. You describe the job. See what the factory assembles.">
+<meta property="og:site_name" content="Wicked Agile">
+<title>THE WORK | The Factory, v7.1</title>
+<style>
+:root{
+ --bg:#071821;--ink:#fff5dc;--soft:#dfebdf;--dim:#a8bdba;--muted:#718f93;--line:#31535d;
+ --amber:#ffbf6c;--mint:#8cf3d0;--blue:#9bdaff;--lilac:#ccb3ff;--coral:#ff8f91;
+ --font:system-ui,-apple-system,'Segoe UI',Roboto,'Noto Sans',Arial,sans-serif;
+ --mono:ui-monospace,SFMono-Regular,Consolas,'Liberation Mono',monospace;
+}
+*{box-sizing:border-box}
+html{background:var(--bg);scroll-behavior:smooth;scroll-padding-top:18px}
+body{margin:0;min-width:0;max-width:100%;color:var(--ink);background:
+ radial-gradient(ellipse 85% 420px at 50% 80px,#153d45 0%,transparent 100%),
+ var(--bg);font-family:var(--font);-webkit-font-smoothing:antialiased}
+button,a,summary{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+button{font:inherit;cursor:pointer}
+button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var(--amber);outline-offset:4px}
+a{color:inherit}
+[hidden]{display:none!important}
+#progress{position:fixed;z-index:100;top:0;left:0;height:3px;width:0%;pointer-events:none;background:linear-gradient(90deg,var(--amber),var(--mint));box-shadow:0 0 12px var(--mint)}
+.topbar{max-width:764px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:19px 19px 8px}
+.wordmark{display:flex;align-items:center;gap:8px;text-decoration:none;font-size:13px;letter-spacing:-.035em;font-weight:1000;white-space:nowrap}
+.wordmark .w{width:31px;height:31px;display:grid;place-items:center;font-size:20px;background:var(--amber);color:#08232d;clip-path:polygon(12% 2%,87% 2%,100% 20%,100% 79%,85% 100%,15% 100%,0 80%,0 21%);transform:rotate(-7deg)}
+.wordmark .brandsmall{display:block;color:var(--amber);font:800 9px/1.2 var(--mono);letter-spacing:.13em;margin-top:1px}
+.toplink{font:800 10px/1.1 var(--mono);text-decoration:none;color:var(--mint);border:1px solid #467370;padding:12px 13px;border-radius:4px;white-space:nowrap}
+.shell{width:min(100% - 34px,690px);margin-inline:auto;min-width:0}
+.hero{padding:27px 0 30px;text-align:center}
+.eyebrow,.station-kicker{font:800 11px/1.4 var(--mono);letter-spacing:.115em;text-transform:uppercase;color:var(--mint)}
+.eyebrow{display:flex;align-items:center;justify-content:center;gap:12px}
+.eyebrow:before,.eyebrow:after{content:"";display:block;width:21px;height:1px;background:var(--mint);opacity:.7}
+h1,h2,h3,p{margin:0}
+h1,h2{font-family:var(--font);font-stretch:condensed;letter-spacing:-.075em;text-transform:uppercase;font-weight:1000}
+h1{font-size:clamp(58px,14.7vw,104px);line-height:.86;margin:22px auto 19px;max-width:700px;text-wrap:balance}
+h1 span,h2 em{color:var(--amber);font-style:normal}
+.hero-lead{font-size:clamp(18px,4.8vw,23px);line-height:1.38;letter-spacing:-.025em;max-width:460px;margin:auto;color:var(--soft);font-weight:560}
+.hero-lead strong{color:var(--amber)}
+.hero-hint{font:800 10px/1.3 var(--mono);letter-spacing:.11em;color:var(--dim);margin-top:22px}
+.hero-hint .down{display:block;font-size:27px;line-height:1.35;color:var(--amber);animation:bob 1.7s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(7px)}}
+.hero-factory{width:100%;max-width:455px;margin:6px auto 0;display:block;filter:drop-shadow(0 27px 37px rgba(0,0,0,.32))}
+.hero-factory .window{animation:lit 3.4s ease-in-out infinite}
+.hero-factory .window:nth-child(2n){animation-delay:1.3s}
+@keyframes lit{50%{opacity:.4}}
+.hero-factory .smoke{animation:smoke 4.5s linear infinite;transform-origin:center}
+@keyframes smoke{0%{opacity:0;transform:translateY(9px)}35%{opacity:.85}100%{opacity:0;transform:translateY(-32px)}}
+.hero-factory .parcel{animation:parcelMove 4.5s ease-in-out infinite}
+@keyframes parcelMove{0%,10%{transform:translateY(-36px);opacity:0}22%{opacity:1}75%{opacity:1}95%,100%{transform:translateY(24px);opacity:0}}
+/* This is a genuine vertical document, not a stack of viewport-sized slides. */
+.station{position:relative;padding:38px 0 0;min-width:0}
+.station + .station{border-top:1px solid rgba(133,213,190,.08)}
+.station-head{padding:0 0 22px;text-align:left}
+.station-index{display:flex;align-items:center;gap:9px;font:900 10px/1.2 var(--mono);letter-spacing:.14em;color:var(--mint);text-transform:uppercase}
+.station-index .dot{width:9px;height:9px;border:2px solid var(--mint);border-radius:100%;box-shadow:0 0 0 5px rgba(140,243,208,.06)}
+h2{font-size:clamp(40px,11.4vw,74px);line-height:.94;margin:14px 0 14px;max-width:620px;text-wrap:balance}
+.station-explain{color:var(--soft);font-size:17px;line-height:1.47;max-width:590px;letter-spacing:-.013em}
+.station-explain strong{color:var(--amber)}
+.factory-floor{position:relative;min-width:0;border:1px solid rgba(158,216,197,.32);border-radius:14px;background:
+ radial-gradient(ellipse at 50% 10%,rgba(67,151,154,.19),transparent 66%),
+ repeating-linear-gradient(0deg,transparent,transparent 28px,rgba(150,203,181,.045) 29px),
+ #0b2933;
+ box-shadow:inset 0 2px rgba(255,255,255,.04),0 24px 50px rgba(0,0,0,.16);overflow:clip}
+.floor-top{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px 15px;background:#12333d;border-bottom:1px solid rgba(195,239,223,.2);font:800 10px/1.2 var(--mono);letter-spacing:.065em;text-transform:uppercase;color:#d1ede0}
+.floor-lights{display:flex;gap:5px;flex:none}.floor-lights i{height:7px;width:7px;border-radius:50%;background:var(--amber);display:block;box-shadow:0 0 10px rgba(255,187,107,.35)}.floor-lights i:nth-child(2){background:var(--mint)}.floor-lights i:nth-child(3){background:#456670}
+.station-bottom{font:700 11px/1.45 var(--mono);letter-spacing:.01em;color:var(--dim);padding:15px 3px 0}
+.connector{height:91px;display:grid;place-items:center;position:relative;margin:8px auto 0;width:54px}
+.connector:before,.connector:after{content:"";position:absolute;top:0;bottom:0;border-left:2px dashed rgba(255,189,110,.5)}
+.connector:before{left:9px}.connector:after{right:9px}
+.connector .crate{z-index:1;width:38px;height:34px;border:2px solid #492c18;background:linear-gradient(145deg,#ffe09a,#f3a85c);border-radius:4px;display:grid;place-items:center;font:900 18px var(--mono);color:#543318;box-shadow:0 8px 0 #a96c3c,0 0 25px rgba(255,184,99,.35);animation:along 3.5s ease-in-out infinite}
+@keyframes along{0%,100%{transform:translateY(-19px)}50%{transform:translateY(22px)}}
+/* Receive */
+.door-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:17px 14px 3px}
+.door{min-width:0;min-height:60px;border:1px solid #426572;background:#102f3a;border-radius:9px;color:#d7eae3;padding:10px 6px;display:flex;align-items:center;justify-content:center;gap:8px;text-align:center;font-weight:800;font-size:13px;line-height:1.2}
+.door svg{width:19px;height:19px;flex:none}
+.door[aria-pressed="true"]{background:#3d3d2c;border-color:var(--amber);color:#ffe1a9;box-shadow:inset 0 0 0 1px rgba(255,191,108,.25)}
+.feeder{width:100%;height:64px;display:block;margin-top:2px}
+.feeder path{fill:none;stroke:#4d7e80;stroke-width:3;stroke-dasharray:5 7}.feeder .pulse{stroke:var(--amber);stroke-width:3;stroke-dasharray:9 115;animation:flow 2.5s linear infinite}
+@keyframes flow{to{stroke-dashoffset:-124}}
+.order-paper{position:relative;background:#fff1d4;color:#17323a;padding:21px 19px 22px;margin:0 14px 18px;border-radius:4px 4px 9px 9px;box-shadow:6px 8px 0 rgba(0,0,0,.17);transform:rotate(-.4deg)}
+.order-paper:before{content:"";position:absolute;top:0;left:0;right:0;height:10px;background:repeating-linear-gradient(90deg,transparent 0 12px,rgba(255,255,255,.6) 12px 15px)}
+.order-id{font:900 10px/1.2 var(--mono);letter-spacing:.11em;color:#5f6e60;margin:0 0 13px}
+.order-text{font-weight:900;font-size:clamp(21px,6.2vw,30px);line-height:1.1;letter-spacing:-.045em;max-width:560px}
+.order-foot{margin-top:18px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;font:800 10px/1.25 var(--mono);color:#4d655d}
+.order-stamp{display:inline-block;padding:5px 9px;border:2px solid #bd7340;transform:rotate(-7deg);color:#a75e37;font-weight:1000}
+.job-picker{margin-top:15px}
+.job-intro{font:900 10px/1.4 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--mint);margin-bottom:9px}
+.job-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.job{min-height:58px;border-radius:9px;padding:9px 7px;border:1px solid #3a6570;background:#0e303b;color:#e3ede6;display:flex;align-items:center;justify-content:center;gap:6px;text-align:center;font-weight:900;font-size:13px;line-height:1.2;min-width:0}
+.job[aria-pressed="true"]{background:var(--amber);color:#153037;border-color:var(--amber);box-shadow:0 5px 0 #a56e3a}
+.job .job-icon{font-size:19px;flex:none}
+/* Sorting: portrait-shaped light-up requirements, no horizontal rails */
+.sorter{padding:16px 14px 17px}
+.sort-head{background:#173744;border:1px solid #457879;border-radius:10px;padding:19px 18px;display:flex;align-items:center;gap:12px}
+.sort-head .scanner{width:56px;height:51px;flex:none;border:3px solid var(--amber);border-radius:10px;background:#2d4450;display:grid;place-items:center;box-shadow:inset 0 0 0 5px #1b3440;position:relative}
+.scanner:after{content:"";width:27px;height:4px;background:var(--mint);position:absolute;top:21px;left:12px;box-shadow:0 0 10px var(--mint);animation:blink 1.6s linear infinite}
+@keyframes blink{50%{opacity:.25}}
+.sort-head b{font-size:19px;letter-spacing:-.04em;line-height:1.1}.sort-head small{display:block;font-size:12px;line-height:1.4;color:var(--dim);margin-top:5px}
+.sort-arm{width:3px;height:23px;background:#618b88;margin:0 auto}
+.requirements{display:grid;gap:9px}
+.requirement{position:relative;display:grid;grid-template-columns:39px minmax(0,1fr) auto;align-items:center;gap:10px;padding:13px 11px;border-radius:9px;border:1px solid #426c70;background:#102f38;min-height:75px}
+.req-icon{width:37px;height:37px;display:grid;place-items:center;border:1px solid rgba(176,236,218,.35);background:#214550;border-radius:50%;font-size:18px}
+.req-title{font-size:16px;font-weight:900;line-height:1.15;letter-spacing:-.03em}.req-sub{font-size:12px;color:#b2cfc6;line-height:1.35;margin-top:4px}
+.req-status{font:900 9px/1.2 var(--mono);letter-spacing:.04em;text-transform:uppercase;color:var(--mint);white-space:nowrap;align-self:start;margin-top:3px}
+.requirement.off{opacity:.43;filter:saturate(.35);border-style:dashed}
+.requirement.off .req-status{color:var(--dim)}
+.sort-foot{color:var(--mint);font:800 12px/1.45 var(--mono);margin:13px 2px 0}
+/* Assembly */
+.assembly-intro{padding:17px 15px 8px;display:flex;align-items:center;gap:13px}
+.assembly-icon{width:65px;height:65px;position:relative;flex:none;background:#204b54;border:2px solid #6a9691;border-radius:11px;display:grid;place-items:center}
+.assembly-icon:before{content:"";position:absolute;top:-17px;left:28px;width:7px;height:17px;background:#6d8a80}
+.assembly-icon:after{content:"";position:absolute;top:-22px;left:26px;width:12px;height:12px;border-radius:50%;background:var(--amber);box-shadow:0 0 14px var(--amber)}
+.assembly-icon svg{width:49px;height:49px}
+.assembly-intro .big-count{font-weight:1000;font-size:25px;line-height:1;letter-spacing:-.06em}.assembly-intro p{margin-top:6px;font-size:12px;line-height:1.4;color:#b8d2ca}
+.roster{display:grid;gap:13px;padding:12px 13px 18px}
+.employee{position:relative;min-width:0;display:grid;grid-template-columns:55px minmax(0,1fr);gap:8px 10px;border:1px solid #47767b;background:#12343d;border-radius:12px;padding:14px 12px 12px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.02)}
+.employee:before{content:"";height:10px;width:10px;background:var(--amber);border:3px solid #12343d;outline:1px solid var(--amber);border-radius:50%;position:absolute;left:-6px;top:24px}
+.bot-head{width:50px;height:52px;position:relative;align-self:start;display:grid;place-items:center;border-radius:12px;border:3px solid #7de0cb;background:#e8be84;box-shadow:0 5px 0 #2b7175}
+.bot-head:before{content:"";position:absolute;top:-10px;left:19px;width:5px;height:9px;background:#6cb9b0}.bot-head:after{content:"";position:absolute;top:-15px;left:16px;width:11px;height:9px;border-radius:50%;background:#ffd68c}
+.bot-eyes{font-size:22px;line-height:1;letter-spacing:-4px;color:#174151;font-weight:1000;transform:translateX(-2px)}
+.bot-head.doer{border-color:var(--amber);background:#f2a477}.bot-head.checker{border-color:#b4a6fa;background:#d5c6fc}.bot-head.writer{border-color:#86cafa;background:#9dc8e9}
+.employee-title{min-width:0}.employee-num{font:800 9px/1.3 var(--mono);letter-spacing:.105em;color:var(--mint);margin:0 0 5px}
+.employee-title h3{font-size:17px;line-height:1.16;letter-spacing:-.04em;font-weight:950;overflow-wrap:anywhere}
+.employee-title p{font-size:13px;line-height:1.4;color:#b9d4cb;margin-top:6px}
+.kit{grid-column:1/-1;min-width:0;display:grid;gap:5px;margin-top:4px}
+.kit-row{min-width:0;display:grid;grid-template-columns:minmax(86px,31%) minmax(0,1fr);gap:8px;align-items:start;background:#1a4148;padding:10px 11px;border-radius:6px;font-size:13px;line-height:1.35}
+.kit-label{font:900 10px/1.35 var(--mono);letter-spacing:.01em;color:var(--amber);display:flex;align-items:center;gap:7px}
+.kit-label i{width:7px;height:7px;border-radius:2px;background:var(--amber);display:inline-block;flex:none}
+.kit-row:nth-child(2) .kit-label{color:var(--mint)}.kit-row:nth-child(2) .kit-label i{background:var(--mint)}
+.kit-row:nth-child(3) .kit-label{color:var(--blue)}.kit-row:nth-child(3) .kit-label i{background:var(--blue)}
+.kit-row:nth-child(4) .kit-label{color:var(--lilac)}.kit-row:nth-child(4) .kit-label i{background:var(--lilac)}
+.kit-value{overflow-wrap:anywhere;color:#f3f2e3;font-size:13px;font-weight:600}
+.employee-stamp{grid-column:1/-1;color:#9bcabe;font:800 10px/1.4 var(--mono);letter-spacing:.06em;text-align:right;margin-top:3px}
+.assembly-notice{padding:0 15px 19px;color:#bdd8d0;font-size:13px;line-height:1.5}
+.assembly-notice strong{color:var(--amber)}
+/* Runtime: work order flows DOWN, human comes from outside the robot roster */
+.line{padding:17px 14px 20px;display:grid;gap:0}
+.line-step{position:relative;display:grid;grid-template-columns:42px minmax(0,1fr);gap:11px;padding-bottom:21px;min-width:0}
+.line-step:not(:last-child):before{content:"";position:absolute;left:20px;top:42px;bottom:0;width:3px;background:repeating-linear-gradient(180deg,var(--amber) 0 8px,transparent 8px 14px)}
+.line-marker{width:42px;height:42px;display:grid;place-items:center;background:#2b4e56;border:2px solid #83b6b0;border-radius:10px;font-size:18px;color:#ffe2a1;z-index:1}
+.line-detail{min-width:0;border:1px solid #426c74;background:#153b45;border-radius:9px;padding:13px 13px 14px}
+.line-type{font:900 9px/1.2 var(--mono);letter-spacing:.08em;color:var(--mint);text-transform:uppercase}
+.line-detail h3{font-size:18px;line-height:1.15;letter-spacing:-.035em;margin-top:5px}
+.line-detail p{font-size:13px;line-height:1.45;color:#c5dcd3;margin-top:6px}
+.line-step.human .line-marker{border:3px solid var(--amber);background:#4c3c2e;font-size:23px}
+.line-step.human .line-detail{background:#3a3429;border-color:#ad8851}
+.line-step.human .line-type{color:#ffd499}
+.parallel-tag{font:800 9px/1.2 var(--mono);background:#274b5a;color:#9bdcff;display:inline-block;padding:4px 7px;border-radius:4px;margin-top:9px}
+.line-end{display:flex;align-items:center;gap:9px;color:var(--mint);font:900 11px/1.4 var(--mono);border-top:1px dashed #456f70;padding-top:15px}
+.shortcut{margin-top:17px;padding:15px;border:1px dashed #a87768;border-radius:9px;background:#3b2e32}
+.shortcut .prompt{font-size:13px;line-height:1.5;color:#f1d8ce}
+.shortcut button{display:block;width:100%;margin-top:11px;min-height:48px;border:2px solid var(--coral);border-radius:7px;background:transparent;color:#ffb0aa;font-weight:900;font-size:14px}
+.denied{margin-top:12px;border:2px solid #ef777b;border-radius:8px;padding:13px;background:#581f2b;color:#ffe6dd}
+.denied .denied-title{font-size:17px;font-weight:1000;letter-spacing:-.03em}.denied p{font-size:13px;line-height:1.5;margin-top:6px}
+/* Inspection: a receipt is a document, never a fixed-height image. */
+.receipt{margin:15px;background:#fff3d8;color:#19363b;padding:19px 16px 22px;position:relative;border-radius:4px 4px 3px 3px;box-shadow:6px 8px 0 rgba(0,0,0,.15)}
+.receipt:after{content:"";position:absolute;left:0;right:0;bottom:-8px;height:8px;background:linear-gradient(135deg,#fff3d8 25%,transparent 25%),linear-gradient(225deg,#fff3d8 25%,transparent 25%);background-size:16px 16px;background-position:0 0,8px 0}
+.receipt-header{display:flex;justify-content:space-between;align-items:start;gap:12px;padding-bottom:15px;border-bottom:2px dashed #a2ae9e}
+.receipt-header strong{font:1000 23px/1.05 var(--font);letter-spacing:-.05em}.receipt-header small{font:800 10px/1.2 var(--mono);display:block;margin-top:5px;color:#53675d}
+.receipt-seal{transform:rotate(9deg);border:3px solid #278b74;border-radius:4px;padding:6px 8px;font:1000 12px/1 var(--mono);color:#1f8d78;flex:none}
+.proof-list{display:grid;margin-top:11px}
+.proof{padding:12px 0;display:grid;grid-template-columns:21px minmax(0,1fr);gap:10px;align-items:start;border-bottom:1px solid #d2d7c4}
+.proof-mark{font-size:20px;font-weight:1000;color:#14896b;line-height:1.1}.proof b{display:block;font-size:14px;letter-spacing:-.02em;line-height:1.35}.proof code{display:block;font:800 11px/1.5 var(--mono);margin-top:4px;color:#5e756c;overflow-wrap:anywhere}
+.proof.denial-row{background:#f8d9cd;padding:12px 8px;border:1px solid #d47b75;border-radius:5px;margin-top:9px}.proof.denial-row .proof-mark{color:#b3374a}.proof.denial-row code{color:#a4434d}
+.receipt-foot{padding-top:13px;display:flex;justify-content:space-between;gap:12px;color:#5d7068;font:800 10px/1.35 var(--mono);text-transform:uppercase}
+/* Learning: two shifts pictured vertically, joined by review gate */
+.learn-rail{padding:19px 15px 24px;display:grid;gap:0}
+.shift-card{border-radius:9px;padding:18px 16px;border:1px solid #517b7a;background:#18424a;min-width:0}
+.shift-card.before{border-color:#a97b53;background:#44352c}
+.shift-tag{font:900 10px/1.3 var(--mono);letter-spacing:.1em;color:var(--amber)}
+.shift-card.after .shift-tag{color:var(--mint)}
+.shift-title{font-size:20px;line-height:1.1;font-weight:1000;letter-spacing:-.04em;margin:8px 0}
+.shift-card p{font-size:14px;line-height:1.48;color:#e0e9db}
+.shift-connector{height:74px;position:relative;display:grid;place-items:center}
+.shift-connector:before{content:"";position:absolute;width:4px;top:0;bottom:0;background:repeating-linear-gradient(180deg,#6b9d8e 0 9px,transparent 9px 15px)}
+.review-stamp{z-index:1;position:relative;text-align:center;border:2px solid var(--mint);background:#194c4a;color:var(--mint);padding:11px 14px;border-radius:6px;font:900 11px/1.25 var(--mono);box-shadow:0 0 18px rgba(127,244,208,.2);transform:rotate(-3deg)}
+.lesson-box{margin-top:12px;background:#0d3035;border:1px solid #4e9286;padding:11px 12px;border-radius:6px}
+.lesson-box .label{font:900 10px/1.25 var(--mono);color:var(--mint);letter-spacing:.065em;margin-bottom:5px}
+.lesson-box .value{font-size:14px;line-height:1.45;color:#ebf7e7;overflow-wrap:anywhere}
+.learn-rule{margin:16px 2px 0;padding:13px;border-left:3px solid var(--amber);background:#273b3b;font-size:13px;line-height:1.45;color:#e8f0e2}
+/* Big typographic outro */
+.outro{text-align:center;padding:61px 0 35px}
+.outro .outro-rule{height:3px;background:linear-gradient(90deg,transparent,var(--mint),transparent);margin:0 auto 42px;max-width:280px}
+.outro h2{font-size:clamp(49px,13vw,86px);line-height:.92;margin:18px auto 20px;max-width:680px}
+.outro p{font-size:clamp(17px,4.7vw,22px);line-height:1.45;max-width:470px;margin:0 auto;color:var(--soft)}
+.outro p strong{color:var(--amber)}
+.outro .recap{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin:27px auto 0;max-width:500px}
+.outro .recap span{padding:11px 2px;background:#143b41;border:1px solid #39766c;border-radius:6px;font:900 11px/1.3 var(--mono);color:var(--mint);text-transform:uppercase}
+.replay{display:inline-flex;align-items:center;justify-content:center;margin-top:28px;text-decoration:none;min-height:52px;border-radius:7px;border:1px solid var(--amber);background:var(--amber);color:#16303a;padding:13px 19px;font-size:14px;font-weight:950}
+/* Advanced: native expandable text below, no modal or scroll lock */
+.blueprint{padding:27px 0 30px;border-top:1px solid #31545a}
+.blueprint-head{display:flex;align-items:start;gap:11px;margin-bottom:17px}
+.blueprint-icon{width:37px;height:37px;border:1px solid #64a29c;border-radius:7px;background:#183e47;display:grid;place-items:center;font-size:23px;flex:none}
+.blueprint h2{font-size:clamp(27px,8vw,40px);margin:0 0 6px;letter-spacing:-.05em}
+.blueprint p{font-size:14px;line-height:1.55;color:#c1d8d0}
+.blueprint details{background:#102c35;border:1px solid #315c64;border-radius:9px;margin-bottom:8px;overflow:clip}
+.blueprint summary{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:14px;padding:15px;min-height:56px;color:#f2f4df;font-size:15px;line-height:1.3;font-weight:800;cursor:pointer}
+.blueprint summary::-webkit-details-marker{display:none}
+.blueprint summary:after{content:"+";font-size:25px;line-height:1;color:var(--amber);flex:none}
+.blueprint details[open] summary:after{content:"−"}
+.blueprint .detail-body{border-top:1px solid #315c64;padding:13px 15px 17px;color:#cfe0da;font-size:14px;line-height:1.65}
+.blueprint .detail-body p+p{margin-top:11px}
+.blueprint .detail-body strong{color:var(--mint)}
+.blueprint code{font-family:var(--mono);font-size:.91em;color:#f9d59c;overflow-wrap:anywhere}
+.notice{padding:13px 14px;background:#1a3c40;border:1px solid #4e7770;border-radius:7px;font-size:13px;line-height:1.55;color:#d3e4dc;margin-top:15px}
+.site-foot{padding:27px 0 max(33px,env(safe-area-inset-bottom));border-top:1px solid #2f4c52;text-align:center;color:#afc9c3;font-size:13px;line-height:1.8}
+.site-foot a{color:var(--mint);text-underline-offset:3px}
+/* Scroll-triggered station machinery. Effects are cosmetic and never hide content. */
+@keyframes powerOn{0%{box-shadow:inset 0 0 0 0 rgba(255,193,106,0)}35%{box-shadow:inset 0 0 0 2px rgba(255,193,106,.55)}100%{box-shadow:inset 0 0 0 0 rgba(255,193,106,0)}}
+@keyframes stampIn{0%{filter:brightness(.8);transform:scale(.9) rotate(-12deg)}50%{filter:brightness(1.5);transform:scale(1.09) rotate(-6deg)}100%{filter:brightness(1);transform:scale(1) rotate(0deg)}}
+@keyframes toolFeed{0%{border-left-color:transparent;background:#1a4148}50%{border-left-color:var(--amber);background:#24545b}100%{border-left-color:#507b78;background:#1a4148}}
+.employee.fired .kit-row{border-left:3px solid #507b78;animation:toolFeed .9s ease-out both}
+.employee.fired .kit-row:nth-child(2){animation-delay:.13s}
+.employee.fired .kit-row:nth-child(3){animation-delay:.27s}
+.employee.fired .kit-row:nth-child(4){animation-delay:.41s}
+.requirement.fired{animation:powerOn .8s ease-out}
+.line-step.fired .line-marker{animation:powerOn .7s ease-out}
+.proof.fired .proof-mark{animation:stampIn .5s ease-out both}
+.shift-card.fired{animation:powerOn .8s ease-out}
+/* reveal without ever hiding reading content */
+.station .factory-floor{transition:border-color .45s ease,box-shadow .45s ease}
+.station.in-view .factory-floor{border-color:rgba(146,238,209,.57);box-shadow:0 20px 55px rgba(0,0,0,.24),0 0 26px rgba(126,238,198,.07)}
+@media(min-width:700px){
+ .shell{width:min(100% - 60px,690px)}
+ .hero{padding-top:35px}
+ .station{padding-top:62px}
+ .station-head{padding-bottom:26px}
+ .factory-floor{border-radius:16px}
+ .door-grid{padding:21px 21px 0;gap:12px}
+ .door{font-size:15px;min-height:72px}
+ .order-paper{margin:0 28px 25px;padding:29px}
+ .sorter{padding:22px}
+ .requirements{gap:11px}
+ .requirement{padding:18px}
+ .roster{padding:15px 19px 24px;gap:16px}
+ .employee{grid-template-columns:66px 1fr;padding:18px;gap:12px}
+ .bot-head{width:58px;height:59px}
+ .employee-title h3{font-size:20px}
+ .employee-title p{font-size:14px}
+ .kit{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+ .kit-row{grid-template-columns:1fr;gap:6px;min-height:77px;padding:12px}
+ .kit-value{font-size:14px}
+ .line{padding:23px 25px 26px}
+ .line-step{grid-template-columns:51px 1fr;gap:16px;padding-bottom:26px}
+ .line-step:not(:last-child):before{left:24px;top:50px}
+ .line-marker{height:50px;width:50px}
+ .line-detail{padding:18px}
+ .line-detail h3{font-size:22px}
+ .line-detail p{font-size:14px}
+ .receipt{margin:24px 28px;padding:26px}
+ .learn-rail{padding:24px 28px 28px}
+}
+@media(max-width:350px){
+ .shell{width:calc(100% - 26px)}
+ .topbar{padding-inline:13px}
+ .wordmark{font-size:12px}
+ .toplink{padding:10px 9px;font-size:9px}
+ h1{font-size:clamp(47px,14.5vw,60px)}
+ h2{font-size:clamp(36px,11vw,48px)}
+ .door{font-size:12px;padding:8px 4px}
+ .door svg{width:17px;height:17px}
+ .kit-row{grid-template-columns:78px minmax(0,1fr);padding:9px 8px}
+ .kit-label{font-size:9px}
+ .kit-value{font-size:12px}
+ .order-paper{padding:17px 14px}
+ .requirement{grid-template-columns:34px minmax(0,1fr) auto;gap:7px;padding:10px 8px}
+ .req-icon{width:32px;height:32px}
+ .req-title{font-size:14px}
+ .req-status{font-size:8px}
+ .job{font-size:12px}
+}
+
+/* Scroll-scrub the cargo between stations: it moves with the reader's thumb. */
+.connector .crate{animation:none!important;transform:translateY(calc(-24px + var(--travel, .5) * 50px));transition:box-shadow .2s ease}
+/* V6: The factory has a pulse, and touches actually change the machinery. */
+body{overflow-x:clip} .station{--scene:.0} .factory-floor{isolation:isolate}
+.factory-floor::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:0;background:linear-gradient(180deg,transparent 0,rgba(131,244,200,.085) 48%,transparent 64%);transform:translateY(calc((var(--scene) - .5) * 110%));opacity:.7;mix-blend-mode:screen}
+.factory-floor > *{position:relative;z-index:1}
+.factory-floor .floor-top{z-index:3}
+.play-tip{margin:10px auto 0;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px;font:900 10px/1.6 var(--mono);letter-spacing:.05em;color:#cfe7d7}
+.play-dot{width:9px;height:9px;border-radius:50%;background:var(--mint);box-shadow:0 0 15px var(--mint);animation:beacon 1.3s ease-in-out infinite}
+@keyframes beacon{50%{box-shadow:0 0 0 8px rgba(140,243,208,0);opacity:.5}}
+.sound-toggle{display:block;margin:14px auto 0;padding:9px 15px;min-height:43px;background:#10363b;border:1px solid #5f9a93;border-radius:30px;color:var(--mint);font:900 11px var(--mono)}
+.sound-toggle[aria-pressed="true"]{background:#304e3e;border-color:var(--amber);color:var(--amber)}
+.hero-factory .lift-car{animation:liftDown 5.6s ease-in-out infinite;transform-origin:200px 210px}
+@keyframes liftDown{0%,100%{transform:translateY(-63px)}50%{transform:translateY(74px)}}
+.hero-factory .window{animation:lit 2.4s ease-in-out infinite}
+.door,.job,.memory-choice,.scanner,.qc-stamp,.sound-toggle,.start-shift,.lever-control{transition:transform .22s ease,filter .22s ease,box-shadow .22s ease}
+.door:active,.job:active,.memory-choice:active,.scanner:active,.qc-stamp:active,.start-shift:active,.lever-control:active{transform:scale(.96)}
+.door[aria-pressed="true"],.job[aria-pressed="true"]{position:relative}
+.door[aria-pressed="true"]::after,.job[aria-pressed="true"]::after{content:"✦";position:absolute;top:2px;right:4px;font-size:13px;color:var(--mint);animation:beacon .9s ease-in-out infinite}
+.intake-chute{margin:12px 15px 0;display:flex;align-items:center;justify-content:center;gap:9px;color:var(--amber);font:800 10px/1.3 var(--mono);letter-spacing:.06em}
+.intake-light{height:6px;width:6px;border-radius:100%;background:var(--amber);animation:beacon 1.3s infinite}
+.loading-ticket{position:absolute;top:26px;left:calc(50% - 22px);width:44px;height:53px;z-index:8!important;border-radius:3px;background:#ffdf98;border:2px solid #fff4ce;box-shadow:0 0 30px rgba(255,204,105,.9);pointer-events:none;display:grid;place-items:center;color:#17333a;font:1000 19px var(--mono);animation:ticketDrop 1.1s cubic-bezier(.33,.1,.73,1) both}
+@keyframes ticketDrop{0%{opacity:0;transform:translateY(5px) rotate(-23deg) scale(.6)}12%{opacity:1}72%{opacity:1;transform:translateY(185px) rotate(4deg) scale(1.2)}100%{transform:translateY(235px) rotate(0) scale(.88);opacity:0}}
+.order-paper.ticket-flash{animation:paperThump .65s cubic-bezier(.2,.9,.3,1)}
+@keyframes paperThump{0%{transform:rotate(4deg) translateY(-19px) scale(.94)}62%{transform:rotate(-2deg) translateY(6px) scale(1.015)}100%{transform:rotate(-.4deg)}}
+.scanner{border:3px solid var(--amber);cursor:pointer;color:var(--mint);font-size:28px;line-height:1;overflow:hidden}
+.scanner:focus-visible{outline-offset:5px}
+.scanner:after{animation:scannerSweep 1.6s cubic-bezier(.3,0,.7,1) infinite}
+@keyframes scannerSweep{0%,100%{transform:translateY(-11px)}50%{transform:translateY(12px)}}
+.scanner-hint{font:800 10px/1.35 var(--mono);letter-spacing:.06em;color:var(--mint);text-align:center;padding:10px 0 1px}
+.sorter.scanning .scanner{box-shadow:0 0 0 5px rgba(255,199,111,.24),0 0 26px rgba(255,181,99,.35)}
+.sorter.scanning .requirement{animation:routeSort .55s cubic-bezier(.2,.82,.2,1) both;animation-delay:calc(var(--n,0) * .12s)}
+@keyframes routeSort{0%{transform:translateX(-19px) rotate(-1deg);opacity:.3}75%{transform:translateX(3px)}100%{transform:translateX(0);opacity:1}}
+.requirement:not(.off) .req-status{animation:beacon 2.3s ease-in-out infinite;animation-delay:calc(var(--n,0) * .35s)}
+.forge{margin:7px 13px 12px;padding:11px 11px 14px;border:1px dashed #6da69c;background:#0b2631;border-radius:10px;overflow:hidden}
+.forge-head{display:flex;justify-content:space-between;align-items:center;gap:7px;font:900 10px/1.3 var(--mono);color:#beddd1;letter-spacing:.065em}
+.forge-sparks{color:var(--amber);animation:spark 1s ease-in-out infinite}
+@keyframes spark{50%{transform:scale(1.15);opacity:.3}}
+.supply-bins{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;margin-top:12px}
+.supply{min-width:0;display:grid;justify-items:center;gap:4px;border:1px solid #4b857e;border-radius:7px;background:#1a434b;padding:9px 3px 12px;position:relative}
+.supply span{font-size:22px;line-height:1;color:var(--amber)}
+.supply b{font:900 clamp(7px,2.25vw,10px)/1.25 var(--mono);color:#d9e4d5;white-space:nowrap}
+.supply i{width:13px;height:13px;position:absolute;bottom:0;left:calc(50% - 6px);border:2px solid #fff3d2;border-radius:3px;background:var(--amber);opacity:0}
+#equip.in-view .supply i{animation:supplyDrop 2.2s ease-in infinite;animation-delay:calc(var(--i,0) * .34s)}
+.supply:nth-child(2){--i:1}.supply:nth-child(3){--i:2}.supply:nth-child(4){--i:3}
+.s-memory span{color:var(--mint)} .s-tools span{color:var(--blue)}.s-access span{color:var(--lilac)}
+@keyframes supplyDrop{0%,15%{opacity:0;transform:translateY(0)}30%{opacity:1}78%{opacity:1}100%{opacity:0;transform:translateY(57px) rotate(80deg)}}
+.forge-rail{height:48px;display:flex;align-items:end;justify-content:center;position:relative;gap:6px;font:800 9px/1.1 var(--mono);color:var(--mint);letter-spacing:.04em}
+.forge-rail::before{content:"";position:absolute;top:4px;left:7px;right:7px;height:5px;border-radius:5px;background:repeating-linear-gradient(90deg,#527c7c 0 13px,#a7cac1 13px 19px);background-size:42px 100%;animation:beltLeft 1.3s linear infinite}
+@keyframes beltLeft{to{background-position:42px 0}}
+.forge-carriage{position:absolute;top:-8px;left:1%;color:var(--amber);font-size:21px;animation:gantry 3.5s ease-in-out infinite}
+@keyframes gantry{50%{left:84%;transform:rotate(180deg)}}
+.worker-tip{font:900 10px/1.3 var(--mono);letter-spacing:.02em;color:var(--mint);margin:5px 15px}
+button.bot-head{cursor:pointer;padding:0;font:inherit;min-width:0;color:#174151;position:relative}
+.bot-head:not(.awake) .bot-eyes{animation:eyesLook 2.9s ease-in-out infinite;animation-delay:calc(var(--i,0) * -.33s)}
+@keyframes eyesLook{0%,100%{transform:translateX(-2px)}50%{transform:translateX(2px)}}
+.bot-head:active{transform:scale(.9)}
+.bot-head.awake{animation:robotWave .55s cubic-bezier(.25,.7,.5,1) both}
+@keyframes robotWave{0%{transform:rotate(-15deg)}40%{transform:rotate(11deg) translateY(-7px)}75%{transform:rotate(-7deg)}100%{transform:rotate(0)}}
+.worker-quip{grid-column:1/-1;min-width:0;background:#26574d;border:1px solid var(--mint);border-radius:9px;padding:12px 13px;color:#e8ffe9;font-size:13px;line-height:1.5;animation:quipIn .35s ease-out}
+.worker-quip:before{content:"ROBOT SAYS  ✦";display:block;color:var(--mint);font:900 9px/1.4 var(--mono);margin-bottom:4px}
+@keyframes quipIn{from{opacity:0;transform:translateY(-9px) scale(.98)}to{opacity:1;transform:none}}
+.employee.hello{border-color:var(--mint);box-shadow:0 0 22px rgba(140,243,208,.16)}
+.employee.trained{border-color:var(--amber)}.employee.trained .kit-row:nth-child(2){border:2px solid var(--mint);animation:beacon 1.1s ease-in-out 2}
+.line{position:relative}.line-step:not(:last-child):before{background:repeating-linear-gradient(180deg,var(--amber) 0 12px,#2c5b5c 12px 25px);background-size:100% 25px;animation:runningRail .85s linear infinite}
+@keyframes runningRail{to{background-position:0 25px}}
+#run:not(.in-view) .line-step:not(:last-child):before{animation-play-state:paused}
+.line-step.fired .line-marker{box-shadow:0 0 0 5px rgba(140,243,208,.09),0 0 18px rgba(140,243,208,.24)}
+.moving-cargo{pointer-events:none;position:absolute;left:15px;top:20px;width:40px;height:39px;z-index:4;display:grid;place-items:center;color:#593713;filter:drop-shadow(0 0 7px rgba(255,189,92,.25));transition:filter .2s ease}
+.moving-cargo span{width:28px;height:27px;display:grid;place-items:center;border-radius:4px;border:2px solid #ffe3a0;background:#fbb968;box-shadow:0 4px 0 #b87842;font-size:19px}
+#run.halted .moving-cargo{filter:drop-shadow(0 0 12px #ff6464)}
+.mischief-head{font:900 10px/1.3 var(--mono);letter-spacing:.12em;color:var(--coral);display:flex;justify-content:space-between;margin-bottom:7px}
+.shortcut{border-width:2px}.shortcut button.lever-control{display:flex;align-items:center;gap:13px;justify-content:start;padding:9px 12px;min-height:96px;background:#532e32;border:2px solid #ff9390;border-radius:10px;color:#ffe0d2;text-align:left}
+.lever-control{touch-action:none;user-select:none;-webkit-user-select:none}.lever-illustration{width:65px;height:65px;flex:none;position:relative;display:grid;place-items:center}
+.lever-track{width:30px;height:58px;position:relative;border-radius:10px;background:#162c30;border:3px solid #a6635c;display:block}
+.lever-track:before{content:"";position:absolute;width:3px;height:38px;left:11px;top:10px;background:#a86a67}
+.lever-shaft{position:absolute;left:12px;top:11px;width:6px;height:32px;background:linear-gradient(90deg,#ffe4cb,#c8a18c);border-radius:4px;transform-origin:50% 100%;transform:rotate(-19deg)}
+.lever-grip{position:absolute;width:20px;height:20px;border-radius:50%;left:-5px;top:-1px;background:#ff7e7e;border:3px solid #ffb8b1;box-shadow:0 0 13px #ff7373;transform:translateY(var(--pull,0px));transition:transform .18s ease}
+.lever-text b{display:block;font-size:15px;letter-spacing:-.01em;line-height:1.25}.lever-text small{display:block;font:800 10px/1.4 var(--mono);margin-top:5px;color:#e6afa1}
+#run.halted .lever-grip{transform:translateY(28px)}
+#run.halted .factory-floor{animation:alarmGlow .76s linear infinite alternate;border-color:#ff6e75!important}
+@keyframes alarmGlow{from{box-shadow:0 0 6px rgba(255,63,70,.3),inset 0 0 8px rgba(255,63,70,.06)}to{box-shadow:0 0 27px rgba(255,62,79,.54),inset 0 0 40px rgba(255,48,65,.18)}}
+#run.halted .floor-lights i{background:#ff646a;box-shadow:0 0 12px #ff6b72;animation:beacon .5s infinite}
+.resume-line{background:#ffcd9d!important;color:#522e31!important;border-color:#ffcd9d!important;padding:12px 11px!important}
+.qc-machine{padding:13px 15px 0;display:flex;gap:10px;align-items:center;justify-content:space-between;min-width:0}
+.qc-readout{display:grid;grid-template-columns:10px minmax(0,1fr);gap:4px 7px;align-items:center;min-width:0}
+.qc-readout b{font:900 10px/1.2 var(--mono);color:var(--mint)}.qc-readout small{grid-column:2;font-size:11px;line-height:1.4;color:#bcd2c7}
+.qc-led{height:9px;width:9px;border-radius:50%;background:var(--mint);box-shadow:0 0 10px var(--mint);animation:beacon 1.7s infinite}
+.qc-stamp{border:1px solid #ba8b50;background:#604b31;color:#ffe3b0;border-radius:7px;padding:7px 9px;flex:none;display:flex;align-items:center;gap:7px;font-size:10px;max-width:132px}
+.stamp-handle{width:28px;height:28px;border:2px solid #ffd697;display:grid;place-items:center;border-radius:4px;transform:rotate(-9deg);font-size:20px;font-weight:1000}
+.qc-stamp.stamping .stamp-handle{animation:rubberThump .5s cubic-bezier(.1,.8,.2,1)}
+@keyframes rubberThump{0%{transform:translateY(-28px) scale(1.3) rotate(-13deg)}50%{transform:translateY(5px) scale(.86) rotate(-8deg)}100%{transform:rotate(-9deg)}}
+.receipt.just-stamped .receipt-seal{animation:stampIn .7s ease-out}
+.receipt.just-stamped .proof-mark{animation:stampIn .5s ease-out}
+.memory-sorter{margin:18px 0 10px;border:1px dashed #74b8a7;border-radius:9px;padding:14px;background:#0b3136}
+.memory-title{font:1000 12px/1.3 var(--mono);color:var(--mint);letter-spacing:.07em}
+.memory-sorter p{font-size:13px;line-height:1.5;color:#d5e4db;margin:8px 0 12px}.memory-sorter p strong{color:var(--amber)}
+.memory-choices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.memory-choice{min-width:0;display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:8px;min-height:156px;padding:12px 10px;border-radius:9px;background:#194248;border:1px solid #76ad9e;color:#e9f6e8}
+.memory-choice span{display:grid;place-items:center;width:35px;height:35px;background:#2a6057;color:var(--mint);border-radius:5px;font-size:22px}
+.memory-choice b{font-size:13px;line-height:1.28;overflow-wrap:anywhere;letter-spacing:-.015em}
+.memory-choice small{font:800 9px/1.25 var(--mono);letter-spacing:.015em;color:#bad7c8;margin-top:auto}
+.memory-choice:last-child{background:#3a3032;border-color:#886a6d}
+.memory-choice:last-child span{background:#673d43;color:var(--coral)}
+.memory-choice[aria-pressed="true"],.memory-choice:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+.memory-verdict{min-height:48px;display:flex;align-items:center;gap:8px;color:#c7e5d6;font:900 11px/1.45 var(--mono);margin:10px 3px 0}
+.memory-verdict.approved{color:var(--mint)}.memory-verdict.quarantined{color:var(--coral)}
+.memory-verdict.celebrate{animation:stampIn .5s}
+.shift-card.after{position:relative;overflow:hidden}
+.shift-card.after .mini-belt{display:flex;justify-content:space-around;margin-top:16px;height:28px;align-items:center;background:repeating-linear-gradient(90deg,#2b6b64 0 11px,#19494d 11px 23px);border-top:3px solid #5faca0;border-bottom:3px solid #5faca0;border-radius:5px;overflow:hidden}
+.mini-belt span{color:var(--amber);font-size:17px;animation:miniBelt 1.5s ease-in-out infinite alternate}
+.mini-belt span:nth-child(even){animation-delay:.4s}
+@keyframes miniBelt{to{transform:translateX(9px) rotate(8deg)}}
+.start-shift{width:100%;margin-top:13px;padding:12px 10px;min-height:52px;border:2px solid var(--mint);border-radius:8px;background:#214f4b;color:var(--mint);font-size:14px;font-weight:950}
+
+.next-shift-message{font-size:12px!important;line-height:1.5!important;color:#d6ece1!important;margin-top:9px}
+.shift-card.after.activated{border:2px solid var(--mint);box-shadow:0 0 0 6px rgba(140,243,208,.07),0 0 25px rgba(140,243,208,.19)}
+.shift-card.after.activated .mini-belt span{animation-duration:.32s}
+.shift-card.after.activated .lesson-box{animation:paperThump .55s ease-out}
+.spare-confetti{position:fixed;top:0;left:0;z-index:200;pointer-events:none;width:8px;height:13px;background:var(--mint);border-radius:2px;animation:confetti .9s ease-out both}
+@keyframes confetti{to{opacity:0;transform:translate(var(--x),var(--y)) rotate(410deg) scale(.4)}}
+@media(max-width:350px){.memory-choices{grid-template-columns:1fr}.memory-choice{min-height:95px}.memory-choice small{margin-top:1px}.supply b{font-size:7px}.forge-head{font-size:9px}.qc-stamp b{font-size:8px}.worker-tip{font-size:9px}}
+@media(prefers-reduced-motion:reduce){
+ .factory-floor::after,.moving-cargo,.spare-confetti{display:none!important}
+ .station-vignette *,.tower-floor .tower-window{animation:none!important;transition:none!important}
+ html{scroll-behavior:auto}
+ *,*:before,*:after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+}
+/* V7: The factory is a navigable building; keep this on desktop and in the hero. */
+.hero-factory{overflow:visible}
+.tower-floor{cursor:pointer;outline:0;text-decoration:none}
+.tower-floor .tower-window{fill:#ffbf6c;stroke:#f8dda2;stroke-width:2;transition:fill .2s,filter .2s}
+.tower-floor .tower-letter{fill:#153640;font:900 11px/1 var(--mono);text-anchor:middle;pointer-events:none}
+.tower-floor .tower-gloss{fill:#153640;font:900 9px/1 var(--font);letter-spacing:.016em;text-anchor:middle;pointer-events:none}
+.tower-floor.is-current .tower-window{fill:var(--mint);stroke:#dcffeb;filter:drop-shadow(0 0 8px rgba(140,243,208,.55))}
+.tower-floor:hover .tower-window,.tower-floor:focus-visible .tower-window{fill:#fff0b3;stroke:#fff9e1;filter:drop-shadow(0 0 8px rgba(255,222,148,.55))}
+.tower-floor:focus-visible .tower-hit{stroke:#fff7c9;stroke-width:3}
+.tower-floor.is-current .tower-letter,.tower-floor.is-current .tower-gloss{fill:#0d3435}
+.desktop-floors{display:none}
+.station-vignette{display:none}
+/* Four supplies stay distinct; all cards after the first remain short until expanded. */
+.employee{grid-template-columns:55px minmax(0,1fr) auto;gap:8px 10px;align-items:start}
+.employee-title{grid-column:2;grid-row:1}
+.bot-head{grid-column:1;grid-row:1}
+.kit-toggle{grid-column:3;grid-row:1;align-self:center;min-width:85px;min-height:41px;padding:7px 8px;border:1px solid #568b88;background:#214e53;color:var(--mint);border-radius:7px;font:900 10px/1.35 var(--mono);white-space:nowrap}
+.kit-toggle:focus-visible{outline:2px solid var(--amber)}
+.employee.kit-closed{padding-bottom:14px}
+.employee.kit-closed .employee-title p{margin-top:3px}
+.employee .kit[hidden],.employee .employee-stamp[hidden]{display:none!important}
+.employee.kit-closed .bot-head{transform:scale(.88);transform-origin:top left}
+.employee.trained .kit-row:nth-child(2){border:2px solid var(--mint);box-shadow:0 0 13px rgba(140,243,208,.16)}
+.memory-link{display:inline-block;margin-top:5px;color:var(--mint);font:900 12px/1.5 var(--font);text-decoration-thickness:2px;text-underline-offset:4px}
+.memory-focus{animation:memoryFocus 1.2s ease-out 2;outline:2px solid var(--amber);outline-offset:2px}
+@keyframes memoryFocus{0%,100%{box-shadow:0 0 0 rgba(255,191,108,0)}45%{box-shadow:0 0 0 6px rgba(255,191,108,.24),0 0 25px rgba(140,243,208,.22)}}
+.shift-comparison{margin-top:13px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+.shift-comparison div{border:1px solid #5d9386;border-radius:7px;padding:11px;background:#173d43}
+.shift-comparison div:nth-child(2){border-color:var(--mint);background:#1f584e}
+.shift-comparison span{display:block;font:800 9px/1.35 var(--mono);color:var(--amber);margin-bottom:7px}
+.shift-comparison div:nth-child(2) span{color:var(--mint)}
+.shift-comparison strong{display:block;font-size:12px;line-height:1.35}
+/* An emergency stop freezes the actual belt and cargo, not just the siren. */
+#run.halted .line-step:not(:last-child):before{animation-play-state:paused!important;filter:grayscale(.8);opacity:.45}
+#run.halted .moving-cargo span{background:var(--coral);border-color:#ffe2da;color:#5a2330}
+#run.halted .floor-top{background:#552a30;color:#fff0e5}
+.sound-toggle{font-size:9px;min-height:31px;padding:6px 10px;margin-top:12px;color:#8daca7;border-color:#35565b;background:transparent}
+.sound-toggle[aria-pressed="true"]{color:var(--amber)}
+@media(max-width:530px){.employee{grid-template-columns:49px minmax(0,1fr);gap:7px 9px}.employee .kit-toggle{grid-column:2;grid-row:2;justify-self:start;min-height:33px;min-width:105px}.employee .kit{grid-row:3}.employee .employee-stamp{grid-row:4}.employee .worker-quip{grid-row:5}.employee .bot-head{width:46px;height:48px}.employee-title h3{font-size:17px}.shift-comparison{grid-template-columns:1fr}.tower-floor .tower-letter{font-size:11px}}
+@media(min-width:1100px){
+ body{background:radial-gradient(ellipse 45% 600px at 75% 260px,rgba(42,102,102,.21),transparent 100%),radial-gradient(ellipse 58% 800px at 15% 1500px,rgba(21,83,90,.16),transparent 100%),var(--bg)}
+ .topbar{max-width:1240px;padding:23px 30px 0}
+ .hero.shell{width:min(calc(100% - 100px),1180px);min-height:685px;padding:72px 0 65px;display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);grid-template-rows:auto auto auto auto auto auto;column-gap:58px;align-content:center;align-items:start;text-align:left}
+ .hero .eyebrow{grid-column:1;grid-row:1;justify-content:flex-start}
+ .hero .eyebrow:before{display:none}
+ .hero h1{grid-column:1;grid-row:2;font-size:clamp(86px,8vw,125px);line-height:.88;margin:28px 0 26px;max-width:690px}
+ .hero-lead{grid-column:1;grid-row:3;margin:0;max-width:500px;font-size:25px}
+ .hero .hero-factory{grid-column:2;grid-row:1/span 6;width:100%;max-width:490px;margin:0;align-self:center;justify-self:center;filter:drop-shadow(0 30px 42px rgba(0,0,0,.38))}
+ .hero .play-tip{grid-column:1;grid-row:4;justify-content:flex-start;margin:32px 0 0}
+ .hero .sound-toggle{grid-column:1;grid-row:6;justify-self:start;margin:9px 0 0}
+ .hero .hero-hint{grid-column:1;grid-row:5;margin:25px 0 0}
+ .station{padding:73px 0 0}
+ .station > .shell{width:min(calc(100% - 90px),1160px);display:grid;grid-template-columns:minmax(0,420px) minmax(0,680px);column-gap:58px;align-items:start}
+ .station .station-head{grid-column:1;grid-row:1/span 4;position:sticky;top:45px;padding:11px 0 0;align-self:start}
+ .station .station-head h2{font-size:clamp(57px,4.9vw,77px);line-height:.92;margin:22px 0 22px}
+ .station .station-head .station-explain{font-size:19px;line-height:1.55}
+ .station .factory-floor{grid-column:2;grid-row:1;min-width:0}
+ .station .job-picker{grid-column:2;grid-row:2}
+ .station .station-bottom{grid-column:2;grid-row:3}
+ .station .connector{grid-column:2;grid-row:4}
+ .station-vignette{display:block;width:min(100%,385px);margin:28px 0 0;position:relative;opacity:.94}
+ .station-vignette svg{display:block;width:100%;height:auto;filter:drop-shadow(0 10px 14px rgba(0,0,0,.25))}
+ .vignette-caption{margin:-6px 0 0 12px;color:#79afa2;letter-spacing:.15em;font:800 10px/1.4 var(--mono)}
+ .stage-svg .vignette-bob{animation:vignetteBob 3.7s ease-in-out infinite;transform-origin:50% 72%}
+ .stage-svg .vignette-kit{animation:vignetteFloat 3s ease-in-out infinite}
+ .stage-svg .vignette-kit:nth-of-type(2){animation-delay:-1s}
+ .stage-svg .vignette-shuttle{animation:vignetteDrop 4s ease-in-out infinite}
+ .stage-svg .vignette-loupe{animation:vignetteBob 4s ease-in-out infinite}
+ .stage-svg .vignette-dash{stroke-dasharray:10 8;animation:dashLine 1s linear infinite}
+ .stage-svg .vignette-flash{animation:vignetteGlow 1.3s ease-in-out infinite}
+ .outro.shell{width:min(calc(100% - 50px),950px);padding-top:90px}
+ .blueprint .shell{width:min(calc(100% - 80px),820px)}
+ .site-foot.shell{width:min(calc(100% - 80px),950px)}
+}
+@keyframes vignetteBob{50%{transform:translateY(-7px)}}
+@keyframes vignetteFloat{50%{transform:translateY(-11px) rotate(5deg)}}
+@keyframes vignetteDrop{0%,100%{transform:translateY(-10px)}50%{transform:translateY(32px) rotate(6deg)}}
+@keyframes dashLine{to{stroke-dashoffset:-36}}
+@keyframes vignetteGlow{50%{opacity:.3}}
+@media(min-width:1280px){
+ .desktop-floors{display:flex;flex-direction:column;position:fixed;right:max(15px,calc((100vw - 1440px)/2 + 18px));top:50%;transform:translate(12px,-50%);z-index:75;padding:13px 8px;border:1px solid #30595b;border-radius:9px;background:rgba(8,31,38,.86);backdrop-filter:blur(12px);box-shadow:0 18px 55px rgba(0,0,0,.25);gap:2px;opacity:0;visibility:hidden;pointer-events:none;transition:opacity .26s ease,transform .26s ease,visibility .26s}
+ .past-hero .desktop-floors{opacity:1;visibility:visible;pointer-events:auto;transform:translate(0,-50%)}
+ .desktop-floors-label{font:800 9px/1.4 var(--mono);color:#7ea9a0;letter-spacing:.03em;text-align:center;padding:4px 0 7px}
+ .desktop-floors a{display:flex;gap:9px;align-items:center;text-decoration:none;color:#abc5bd;font:850 11px/1.4 var(--font);padding:9px 8px;min-height:38px;border-radius:5px}
+ .desktop-floors a.is-current{background:#28544d;color:#f6f6df}
+ .desktop-floors .floor-count{font:900 10px/1 var(--mono);color:var(--amber)}
+ .desktop-floors i{width:6px;height:6px;margin-left:auto;border-radius:50%;background:#477570}
+ .desktop-floors a.is-current i{background:var(--mint);box-shadow:0 0 10px var(--mint)}
+}
+/* A compact floor elevator fits real 13-inch laptop viewports without covering the factory. */
+@media(min-width:1280px) and (max-width:1429px){
+ .desktop-floors{right:6px;padding:8px 4px;gap:2px;border-radius:7px}
+ .desktop-floors-label,.desktop-floors a span:not(.floor-count){display:none}
+ .desktop-floors a{position:relative;justify-content:center;gap:0;min-width:29px;min-height:37px;padding:6px 5px}
+ .desktop-floors a i{position:absolute;right:3px;margin:0;width:4px;height:4px}
+}
+
+
+
+</style>
+</head>
+<body>
+<div id="progress" aria-hidden="true"></div>
+<header class="topbar">
+ <a href="#top" class="wordmark" aria-label="Back to the top"><span class="w">W</span><span>THE WORK<span class="brandsmall">WICKED AGILE</span></span></a>
+ <a class="toplink" href="#blueprint">HOW THE FACTORY WORKS ↘</a>
+</header>
+<main>
+<nav class="desktop-floors" aria-label="Jump between factory stations">
+ <div class="desktop-floors-label">FACTORY / LIVE</div>
+ <a href="#receive" data-floor-nav="receive" aria-label="Jump to Receive station"><span class="floor-count">01</span><span>Receive</span><i aria-hidden="true"></i></a>
+ <a href="#route" data-floor-nav="route" aria-label="Jump to Route station"><span class="floor-count">02</span><span>Route</span><i aria-hidden="true"></i></a>
+ <a href="#equip" data-floor-nav="equip" aria-label="Jump to Equip station"><span class="floor-count">03</span><span>Equip</span><i aria-hidden="true"></i></a>
+ <a href="#run" data-floor-nav="run" aria-label="Jump to Run station"><span class="floor-count">04</span><span>Run</span><i aria-hidden="true"></i></a>
+ <a href="#prove" data-floor-nav="prove" aria-label="Jump to Prove station"><span class="floor-count">05</span><span>Prove</span><i aria-hidden="true"></i></a>
+ <a href="#learn" data-floor-nav="learn" aria-label="Jump to Learn station"><span class="floor-count">06</span><span>Learn</span><i aria-hidden="true"></i></a>
+</nav>
+
+ <section id="top" class="hero shell" aria-labelledby="page-title">
+  <div class="eyebrow">The factory is alive · an interactive story</div>
+  <h1 id="page-title">JOB IN.<br><span>CREW OUT.</span></h1>
+  <p class="hero-lead">Don't build an agent. <strong>Give the factory a job.</strong> Watch it hire, equip, and retire a crew.</p>
+  <svg class="hero-factory" viewBox="0 0 400 420" role="img" aria-label="A tall illuminated factory with six floors and a golden work order moving down a central shaft">
+   <defs><linearGradient id="fac" x2="1" y2="1"><stop stop-color="#315963"/><stop offset="1" stop-color="#12323b"/></linearGradient><linearGradient id="roof" y2="1"><stop stop-color="#ffdfa0"/><stop offset="1" stop-color="#c07f43"/></linearGradient><pattern id="grid" width="28" height="28" patternUnits="userSpaceOnUse"><path d="M28 0H0V28" fill="none" stroke="#40666a" stroke-width=".8" opacity=".4"/></pattern></defs>
+   <ellipse cx="200" cy="391" rx="150" ry="19" fill="#010e16" opacity=".5"/>
+   <path class="smoke" d="M85 69Q63 49 85 29Q100 12 80 -3" stroke="#8dd6cf" stroke-width="10" fill="none" stroke-linecap="round" opacity=".5"/>
+   <path class="smoke" style="animation-delay:1.7s" d="M113 67Q91 37 114 13" stroke="#79b4b3" stroke-width="8" fill="none" stroke-linecap="round" opacity=".4"/>
+   <path d="M71 67V33H119V67" fill="#28505b" stroke="#79a69c" stroke-width="4"/>
+   <path d="M55 98L200 39L347 98V115H55Z" fill="url(#roof)" stroke="#e7bb7b" stroke-width="4"/>
+   <path d="M49 110H351V377H49Z" fill="url(#fac)" stroke="#6a9392" stroke-width="4"/>
+   <path d="M49 110H351V377H49Z" fill="url(#grid)" opacity=".8"/>
+   <g stroke="#719a96" stroke-width="3"><path d="M49 156H351M49 200H351M49 244H351M49 288H351M49 332H351"/></g>
+   <path d="M178 111H225V378H178Z" fill="#071f29" stroke="#97c7b1" stroke-width="3"/>
+   <path d="M184 112V377M219 112V377" stroke="#3b6666" stroke-width="2" stroke-dasharray="6 8"/>
+   <g class="lift-car" aria-hidden="true"><path d="M176 201H227V216H176Z" fill="#2b7571" stroke="#90e7bd" stroke-width="3"/><circle cx="187" cy="209" r="3" fill="#ffbd70"/><circle cx="214" cy="209" r="3" fill="#ffbd70"/></g>
+   <a href="#receive" class="tower-floor" data-floor="receive" aria-label="Jump to Receive station">
+    <rect class="tower-hit" x="52" y="113" width="296" height="43" rx="2" fill="transparent"/>
+    <rect class="tower-window" x="69" y="122" width="72" height="24" rx="3"/>
+    <rect class="tower-window" x="242" y="122" width="104" height="24" rx="3"/>
+    <text x="105" y="138" class="tower-letter">RECEIVE</text>
+    <text x="294" y="133" class="tower-gloss">ANY DOOR</text>
+    <text x="294" y="143" class="tower-gloss">ONE FACTORY</text>
+   </a>
+   <a href="#route" class="tower-floor" data-floor="route" aria-label="Jump to Route station">
+    <rect class="tower-hit" x="52" y="157" width="296" height="43" rx="2" fill="transparent"/>
+    <rect class="tower-window" x="69" y="166" width="72" height="24" rx="3"/>
+    <rect class="tower-window" x="242" y="166" width="104" height="24" rx="3"/>
+    <text x="105" y="182" class="tower-letter">ROUTE</text>
+    <text x="294" y="177" class="tower-gloss">JOB PICKS</text>
+    <text x="294" y="187" class="tower-gloss">ITS ROUTE</text>
+   </a>
+   <a href="#equip" class="tower-floor" data-floor="equip" aria-label="Jump to Equip station">
+    <rect class="tower-hit" x="52" y="201" width="296" height="43" rx="2" fill="transparent"/>
+    <rect class="tower-window" x="69" y="210" width="72" height="24" rx="3"/>
+    <rect class="tower-window" x="242" y="210" width="104" height="24" rx="3"/>
+    <text x="105" y="226" class="tower-letter">EQUIP</text>
+    <text x="294" y="221" class="tower-gloss">ONE JOB</text>
+    <text x="294" y="231" class="tower-gloss">ONE CREW</text>
+   </a>
+   <a href="#run" class="tower-floor" data-floor="run" aria-label="Jump to Run station">
+    <rect class="tower-hit" x="52" y="245" width="296" height="43" rx="2" fill="transparent"/>
+    <rect class="tower-window" x="69" y="254" width="72" height="24" rx="3"/>
+    <rect class="tower-window" x="242" y="254" width="104" height="24" rx="3"/>
+    <text x="105" y="270" class="tower-letter">RUN</text>
+    <text x="294" y="265" class="tower-gloss">SCOPED</text>
+    <text x="294" y="275" class="tower-gloss">ACTIONS</text>
+   </a>
+   <a href="#prove" class="tower-floor" data-floor="prove" aria-label="Jump to Prove station">
+    <rect class="tower-hit" x="52" y="289" width="296" height="43" rx="2" fill="transparent"/>
+    <rect class="tower-window" x="69" y="298" width="72" height="24" rx="3"/>
+    <rect class="tower-window" x="242" y="298" width="104" height="24" rx="3"/>
+    <text x="105" y="314" class="tower-letter">PROVE</text>
+    <text x="294" y="309" class="tower-gloss">EVIDENCE</text>
+    <text x="294" y="319" class="tower-gloss">NOT CLAIMS</text>
+   </a>
+   <a href="#learn" class="tower-floor" data-floor="learn" aria-label="Jump to Learn station">
+    <rect class="tower-hit" x="52" y="333" width="296" height="43" rx="2" fill="transparent"/>
+    <rect class="tower-window" x="69" y="342" width="72" height="24" rx="3"/>
+    <rect class="tower-window" x="242" y="342" width="104" height="24" rx="3"/>
+    <text x="105" y="358" class="tower-letter">LEARN</text>
+    <text x="294" y="353" class="tower-gloss">REVIEWED</text>
+    <text x="294" y="363" class="tower-gloss">LEARNING</text>
+   </a>
+   <g class="parcel"><rect x="188" y="300" width="27" height="26" fill="#ffbd70" stroke="#ffe7ad" stroke-width="3" rx="2"/><path d="M200 300V326M189 311H214" stroke="#98613a" stroke-width="2"/></g>
+   <path d="M154 371H248V397H154Z" fill="#294b50" stroke="#b8dec1" stroke-width="3"/>
+   <text x="201" y="388" fill="#8cf3d0" font-family="monospace" text-anchor="middle" font-size="12" font-weight="bold">✓</text>
+   <g fill="#ffcb7c" stroke="#ffdc9b" stroke-width="2"><path d="M39 374H168V396H39Z"/><path d="M234 374H361V396H234Z"/></g>
+   <g fill="#75492c"><rect x="70" y="381" width="20" height="9"/><rect x="102" y="381" width="20" height="9"/><rect x="279" y="381" width="20" height="9"/><rect x="311" y="381" width="20" height="9"/></g>
+  </svg>
+  <div class="play-tip"><span class="play-dot" aria-hidden="true"></span>SCROLL TO RUN THE FACTORY <span aria-hidden="true">·</span> TAP A FLOOR TO JUMP</div>
+  <button id="sound-toggle" type="button" class="sound-toggle" aria-pressed="false" aria-label="Turn on optional factory sound effects">♫ SOUND: OFF</button>
+  <p class="hero-hint">FOLLOW THE WORK ORDER DOWN THE LINE<span class="down" aria-hidden="true">↓</span></p>
+ </section>
+
+ <section class="station" id="receive" aria-labelledby="receive-title"><div class="shell">
+  <div class="station-head"><div class="station-index"><span class="dot"></span>01 / RECEIVE · Receiving dock</div><h2 id="receive-title">ANY DOOR.<br><em>ONE FACTORY.</em></h2><p class="station-explain">A request arrives from somewhere people already work. <strong>No new agent to design.</strong> Just a job to get done.</p><div class="station-vignette" aria-hidden="true"><svg viewBox="0 0 400 265" class="stage-svg" focusable="false">
+ <defs><linearGradient id="metal-receive" x1="0" y1="0" x2="0.9" y2="1"><stop stop-color="#316872"/><stop offset="1" stop-color="#163742"/></linearGradient></defs>
+ <ellipse cx="195" cy="230" rx="159" ry="23" fill="#000d16" opacity=".35"/>
+ <path d="M30 179 L198 114 L371 180 L204 248Z" fill="#1b4b54" stroke="#6bad9f" stroke-width="3"/>
+ <path d="M30 179V194L204 262V248Z" fill="#0e323d" stroke="#487976" stroke-width="2"/>
+ <path d="M204 248V262L371 194V180Z" fill="#143943" stroke="#487976" stroke-width="2"/>
+ <path d="M71 184L204 131L333 182L204 236Z" fill="none" stroke="#80b9a5" opacity=".19" stroke-width="2"/>
+ <path d="M112 169L243 222M152 153L284 209M193 137L323 193" stroke="#75b8aa" stroke-width="1" opacity=".19"/>
+<g class="vignette-bob"><path d="M117 111L208 79L268 106L180 141Z" fill="#f4c07a" stroke="#ffe0a7" stroke-width="3"/>
+ <path d="M117 111V158L180 187V141Z" fill="#9e693e" stroke="#ffe0a7" stroke-width="2"/>
+ <path d="M180 141L268 106V151L180 187Z" fill="#c28a4b" stroke="#ffe0a7" stroke-width="2"/>
+ <path d="M148 99L209 130V178" fill="none" stroke="#ffe6b7" stroke-width="5"/>
+ <path d="M180 141L180 185" stroke="#603b2a" stroke-width="4"/></g>
+ <g class="vignette-shuttle"><rect x="217" y="40" width="58" height="72" rx="5" fill="#fff0d3" stroke="#ffd4a0" stroke-width="4" transform="rotate(11 246 76)"/><path d="M230 66h33M230 77h22M230 88h29" stroke="#37616a" stroke-width="4"/></g>
+ <path d="M54 175L126 146" stroke="#8cf3d0" stroke-width="5" stroke-dasharray="9 8" class="vignette-dash"/>
+ <circle cx="86" cy="131" r="7" fill="#8cf3d0" class="vignette-flash"/></svg><div class="vignette-caption">STATION 01 / RECEIVE</div></div></div>
+  <div class="factory-floor" id="receiving-floor" aria-label="Receiving dock for work orders">
+   <div class="floor-top"><span id="dock-status">DOCK OPEN / PICK A DOOR</span><span class="floor-lights" aria-hidden="true"><i></i><i></i><i></i></span></div>
+   <div class="door-grid" role="group" aria-label="Where the job arrives from">
+    <button type="button" class="door" data-door="m365" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 10h18M10 10v10"/></svg>Microsoft 365</button>
+    <button type="button" class="door" data-door="jira" aria-pressed="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 9h8M8 13h5M8 17h7"/></svg>Jira</button>
+    <button type="button" class="door" data-door="cli" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="3"/><path d="m7 9 4 3-4 3m6 0h4"/></svg>Coding agent</button>
+    <button type="button" class="door" data-door="app" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Business app</button>
+   </div>
+   <div class="intake-chute" aria-hidden="true"><span class="intake-light"></span><span>WORK ORDER IN TRANSIT</span><span class="intake-light"></span></div>
+   <svg class="feeder" viewBox="0 0 350 65" aria-hidden="true" preserveAspectRatio="none"><path d="M90 0V20H175V65M260 0V20H175"/><path class="pulse" d="M90 0V20H175V65M260 0V20H175"/></svg>
+   <div class="order-paper"><div class="order-id"><span id="ticket-origin">JIRA</span> / <span id="ticket-id">REF-240</span></div><p class="order-text" id="ticket-text">A customer was charged twice. Refund the extra $240.</p><div class="order-foot"><span>ONE WORK ORDER · ONE OUTCOME</span><span class="order-stamp">RECEIVED</span></div></div>
+  </div>
+  <div class="job-picker" id="orders"><div class="job-intro">Want a different job? Pick one, or just keep scrolling.</div><div class="job-grid" role="group" aria-label="Example job to run through the factory">
+   <button class="job" data-job="refund" aria-pressed="true"><span class="job-icon" aria-hidden="true">↩</span>Refund</button>
+   <button class="job" data-job="launch" aria-pressed="false"><span class="job-icon" aria-hidden="true">✦</span>Launch</button>
+   <button class="job" data-job="outage" aria-pressed="false"><span class="job-icon" aria-hidden="true">⚡</span>Outage</button>
+   <button class="job" data-job="research" aria-pressed="false"><span class="job-icon" aria-hidden="true">⌕</span>Research</button>
+  </div></div>
+  <p class="station-bottom">The same work order can enter from any door. The factory's rules don't change.</p>
+  <div class="connector" aria-hidden="true"><div class="crate">↓</div></div>
+ </div></section>
+
+ <section class="station" id="route" aria-labelledby="route-title"><div class="shell">
+  <div class="station-head"><div class="station-index"><span class="dot"></span>02 / ROUTE · Sorting machine</div><h2 id="route-title">THE JOB<br><em>PICKS ITS ROUTE.</em></h2><p class="station-explain">The factory reads what the job needs. Investigate? Get a human decision? Change something? Verify it? <strong>Different job, different recipe.</strong></p><div class="station-vignette" aria-hidden="true"><svg viewBox="0 0 400 265" class="stage-svg" focusable="false">
+ <defs><linearGradient id="metal-route" x1="0" y1="0" x2="0.9" y2="1"><stop stop-color="#316872"/><stop offset="1" stop-color="#163742"/></linearGradient></defs>
+ <ellipse cx="195" cy="230" rx="159" ry="23" fill="#000d16" opacity=".35"/>
+ <path d="M30 179 L198 114 L371 180 L204 248Z" fill="#1b4b54" stroke="#6bad9f" stroke-width="3"/>
+ <path d="M30 179V194L204 262V248Z" fill="#0e323d" stroke="#487976" stroke-width="2"/>
+ <path d="M204 248V262L371 194V180Z" fill="#143943" stroke="#487976" stroke-width="2"/>
+ <path d="M71 184L204 131L333 182L204 236Z" fill="none" stroke="#80b9a5" opacity=".19" stroke-width="2"/>
+ <path d="M112 169L243 222M152 153L284 209M193 137L323 193" stroke="#75b8aa" stroke-width="1" opacity=".19"/>
+<path d="M162 80L212 66L285 100L236 118Z" fill="#e9c07c" stroke="#f7d8a1" stroke-width="3"/>
+ <path d="M162 80V135L236 177V118Z" fill="#bd8d54" stroke="#ffdaa0" stroke-width="2"/>
+ <path d="M236 118L285 100V152L236 177Z" fill="#7b694f" stroke="#ffdaa0" stroke-width="2"/>
+ <path d="M236 177L190 200M236 177L286 205" fill="none" stroke="#83dec5" stroke-width="7" stroke-linecap="round"/>
+ <g class="vignette-bob"><rect x="170" y="55" width="57" height="24" rx="6" fill="#8cf3d0" stroke="#d8ffe9" stroke-width="3"/><text x="198" y="72" text-anchor="middle" fill="#13373c" font-family="monospace" font-size="12" font-weight="bold">SORT</text></g>
+ <circle cx="185" cy="199" r="18" fill="#254f60" stroke="#8cf3d0" stroke-width="4"/><text x="185" y="206" text-anchor="middle" fill="#8cf3d0" font-size="22">✓</text>
+ <circle cx="288" cy="204" r="18" fill="#483e31" stroke="#ffbf6c" stroke-width="4"/><text x="288" y="211" text-anchor="middle" fill="#ffbf6c" font-size="22">◎</text></svg><div class="vignette-caption">STATION 02 / ROUTE</div></div></div>
+  <div class="factory-floor"><div class="floor-top"><span>WORK-SHAPE SORTER / LIVE RECIPE</span><span class="floor-lights" aria-hidden="true"><i></i><i></i><i></i></span></div>
+   <div class="sorter" id="sorter-machine"><div class="sort-head"><button class="scanner" id="scan-job" type="button" aria-label="Tap scanner to re-read the work order"><span aria-hidden="true">▤</span></button><div><b id="recipe-title">MONEY MOVEMENT</b><small id="recipe-description">This job moves money, so a human must approve the exact action.</small></div></div><div class="scanner-hint" id="scan-status" aria-live="polite">ROUTE LOADED · TAP THE SCANNER TO RE-RUN IT</div><div class="sort-arm" aria-hidden="true"></div><div id="requirements" class="requirements" aria-live="polite"></div><div class="sort-foot" id="sort-summary">4 stages needed. Human decision included.</div></div>
+  </div><p class="station-bottom">The factory never adds an approval step just for decoration. Low-risk research takes a shorter route.</p>
+  <div class="connector" aria-hidden="true"><div class="crate">↓</div></div>
+ </div></section>
+
+ <section class="station" id="equip" aria-labelledby="equip-title"><div class="shell">
+  <div class="station-head"><div class="station-index"><span class="dot"></span>03 / EQUIP · Worker assembly</div><h2 id="equip-title">HIRE FOR<br><em>ONE SHIFT.</em></h2><p class="station-explain">The factory assembles temporary AI workers for <strong>this</strong> job. Each gets approved facts, reviewed memories, tools, and access limits. Not a permanent AI employee.</p><div class="station-vignette" aria-hidden="true"><svg viewBox="0 0 400 265" class="stage-svg" focusable="false">
+ <defs><linearGradient id="metal-equip" x1="0" y1="0" x2="0.9" y2="1"><stop stop-color="#316872"/><stop offset="1" stop-color="#163742"/></linearGradient></defs>
+ <ellipse cx="195" cy="230" rx="159" ry="23" fill="#000d16" opacity=".35"/>
+ <path d="M30 179 L198 114 L371 180 L204 248Z" fill="#1b4b54" stroke="#6bad9f" stroke-width="3"/>
+ <path d="M30 179V194L204 262V248Z" fill="#0e323d" stroke="#487976" stroke-width="2"/>
+ <path d="M204 248V262L371 194V180Z" fill="#143943" stroke="#487976" stroke-width="2"/>
+ <path d="M71 184L204 131L333 182L204 236Z" fill="none" stroke="#80b9a5" opacity=".19" stroke-width="2"/>
+ <path d="M112 169L243 222M152 153L284 209M193 137L323 193" stroke="#75b8aa" stroke-width="1" opacity=".19"/>
+<path d="M111 112V60L181 29L244 58V111" fill="none" stroke="#9ad0c0" stroke-width="8" stroke-linejoin="round"/>
+ <path d="M111 65L181 95L244 65" fill="none" stroke="#436c72" stroke-width="8"/>
+ <path d="M182 87V133" stroke="#ffbf6c" stroke-width="5" stroke-dasharray="9 5"/>
+ <g class="vignette-bob"><rect x="150" y="131" width="65" height="59" rx="13" fill="#e9bd83" stroke="#8cf3d0" stroke-width="5"/><rect x="163" y="150" width="13" height="10" rx="5" fill="#17464b"/><rect x="190" y="150" width="13" height="10" rx="5" fill="#17464b"/><path d="M175 173h15" stroke="#17464b" stroke-width="4"/></g>
+ <g class="vignette-kit"><rect x="254" y="81" width="33" height="31" rx="6" fill="#8cf3d0"/><text x="270" y="102" text-anchor="middle" fill="#17464b" font-family="monospace" font-size="16" font-weight="bold">M</text></g>
+ <g class="vignette-kit"><rect x="289" y="115" width="33" height="31" rx="6" fill="#9bdaff"/><text x="305" y="136" text-anchor="middle" fill="#17464b" font-family="monospace" font-size="16" font-weight="bold">T</text></g>
+ <g class="vignette-kit"><rect x="250" y="155" width="33" height="31" rx="6" fill="#ccb3ff"/><text x="266" y="176" text-anchor="middle" fill="#17464b" font-family="monospace" font-size="16" font-weight="bold">A</text></g></svg><div class="vignette-caption">STATION 03 / EQUIP</div></div></div>
+  <div class="factory-floor"><div class="floor-top"><span>ASSEMBLY / TEMPORARY CREW</span><span class="floor-lights" aria-hidden="true"><i></i><i></i><i></i></span></div>
+   <div class="assembly-intro"><div class="assembly-icon" aria-hidden="true"><svg viewBox="0 0 64 64"><rect x="7" y="13" width="50" height="44" rx="10" fill="#e9bc83" stroke="#80e8cd" stroke-width="4"/><rect x="15" y="28" width="12" height="10" rx="5" fill="#0c3b43"/><rect x="37" y="28" width="12" height="10" rx="5" fill="#0c3b43"/><path d="M25 45h14" stroke="#0c3b43" stroke-width="4" stroke-linecap="round"/></svg></div><div><div class="big-count"><span id="crew-count">3</span> one-shift workers</div><p>Built for this exact work order. No extra roles.</p></div></div>
+   <div class="forge" aria-label="Assembly machine supplies each temporary worker with four distinct capabilities">
+    <div class="forge-head"><span>◉ AUTO-LOADING WORKER KITS</span><span class="forge-sparks" aria-hidden="true">✧ ✦ ✧</span></div>
+    <div class="supply-bins" aria-hidden="true">
+     <div class="supply s-know"><span>▤</span><b>FACTS</b><i></i></div>
+     <div class="supply s-memory"><span>◈</span><b>MEMORY</b><i></i></div>
+     <div class="supply s-tools"><span>⚙</span><b>TOOLS</b><i></i></div>
+     <div class="supply s-access"><span>⛨</span><b>ACCESS</b><i></i></div>
+    </div>
+    <div class="forge-rail"><span class="forge-carriage" aria-hidden="true">⚙</span><span>↓ EACH WORKER GETS A DIFFERENT KIT ↓</span></div>
+   </div>
+   <div class="worker-tip">EXPLORE A WORKER’S KIT. OR TAP A ROBOT TO HEAR ITS LIMITS.</div>
+   <div id="roster" class="roster" aria-live="polite"></div>
+   <p class="assembly-notice"><strong>Notice:</strong> A human approver is not assembled here. They stay a person, at their own checkpoint on the line.</p>
+  </div><p class="station-bottom">Knowledge = approved sources. Memory = reviewed lessons. Tools = equipment. Access = what each worker is actually allowed to do.</p>
+  <div class="connector" aria-hidden="true"><div class="crate">↓</div></div>
+ </div></section>
+
+ <section class="station" id="run" aria-labelledby="run-title"><div class="shell">
+  <div class="station-head"><div class="station-index"><span class="dot"></span>04 / RUN · Production line</div><h2 id="run-title">CLOCK IN.<br><em>DO THE JOB.</em></h2><p class="station-explain">The workers follow the route. Some investigate together. A human makes decisions that belong to a human. Each tool checks what a worker may do <strong>before anything changes.</strong></p><div class="station-vignette" aria-hidden="true"><svg viewBox="0 0 400 265" class="stage-svg" focusable="false">
+ <defs><linearGradient id="metal-run" x1="0" y1="0" x2="0.9" y2="1"><stop stop-color="#316872"/><stop offset="1" stop-color="#163742"/></linearGradient></defs>
+ <ellipse cx="195" cy="230" rx="159" ry="23" fill="#000d16" opacity=".35"/>
+ <path d="M30 179 L198 114 L371 180 L204 248Z" fill="#1b4b54" stroke="#6bad9f" stroke-width="3"/>
+ <path d="M30 179V194L204 262V248Z" fill="#0e323d" stroke="#487976" stroke-width="2"/>
+ <path d="M204 248V262L371 194V180Z" fill="#143943" stroke="#487976" stroke-width="2"/>
+ <path d="M71 184L204 131L333 182L204 236Z" fill="none" stroke="#80b9a5" opacity=".19" stroke-width="2"/>
+ <path d="M112 169L243 222M152 153L284 209M193 137L323 193" stroke="#75b8aa" stroke-width="1" opacity=".19"/>
+<path d="M106 148L218 104L316 146L206 190Z" fill="#325d65" stroke="#8ad2bd" stroke-width="3"/>
+ <path class="vignette-dash" d="M136 146L208 121L280 150L203 176Z" fill="none" stroke="#ffcf8d" stroke-width="5" stroke-dasharray="10 10"/>
+ <g class="vignette-bob"><rect x="105" y="102" width="44" height="42" rx="9" fill="#ebc18b" stroke="#8cf3d0" stroke-width="4"/><rect x="114" y="117" width="9" height="8" rx="4" fill="#16404a"/><rect x="132" y="117" width="9" height="8" rx="4" fill="#16404a"/></g>
+ <path d="M216 89V166" stroke="#f7d4a1" stroke-width="8"/><g class="vignette-flash"><circle cx="216" cy="72" r="29" fill="#4e3a2b" stroke="#ffbf6c" stroke-width="5"/><text x="216" y="81" text-anchor="middle" fill="#ffbf6c" font-size="27">✋</text></g>
+ <rect x="260" y="103" width="43" height="43" rx="10" fill="#8cf3d0" stroke="#e0f9e5" stroke-width="4"/><path d="M271 123l8 8 15-17" fill="none" stroke="#16454a" stroke-width="5"/></svg><div class="vignette-caption">STATION 04 / RUN</div></div></div>
+  <div class="factory-floor"><div class="floor-top"><span><span id="run-status">LINE RUNNING</span> / <span id="line-order">REF-240</span></span><span class="floor-lights" aria-hidden="true"><i></i><i></i><i></i></span></div>
+   <div class="line"><div id="line-steps" aria-live="polite"></div><div class="moving-cargo" id="moving-cargo" aria-hidden="true"><span>✦</span></div><div class="line-end"><span aria-hidden="true">✓</span> Workers clock out when this job ends.</div>
+    <div class="shortcut" id="shortcut-console">
+     <div class="mischief-head">THE TEMPTING SHORTCUT <span aria-hidden="true">⚠</span></div>
+     <p class="prompt">What if a worker skips the human decision or uses a tool it shouldn't?</p>
+     <button id="skip-test" class="lever-control" type="button" aria-label="Pull the red lever to attempt an unauthorized shortcut">
+      <span class="lever-illustration" aria-hidden="true"><span class="lever-track"><span class="lever-shaft"></span><span class="lever-grip"></span></span></span>
+      <span class="lever-text"><b>PULL THE RED LEVER</b><small>DRAG THE LEVER DOWN. OR JUST TAP IT.</small></span>
+     </button>
+     <div class="denied" id="denied" hidden role="status"><div class="denied-title">⛔ LINE STOPPED. ACTION DENIED.</div><p id="denied-reason">The attempted action is denied and recorded.</p><button id="resume-line" class="resume-line" type="button">↻ RESUME THE APPROVED ROUTE</button></div>
+    </div>
+   </div>
+  </div><p class="station-bottom">The factory enforces the rules. The worker doesn't get to decide which rules are optional.</p>
+  <div class="connector" aria-hidden="true"><div class="crate">↓</div></div>
+ </div></section>
+
+ <section class="station" id="prove" aria-labelledby="prove-title"><div class="shell">
+  <div class="station-head"><div class="station-index"><span class="dot"></span>05 / PROVE · Independent inspection</div><h2 id="prove-title">DON'T ASK<br><em>THE WORKER.</em></h2><p class="station-explain">Ask for proof. A separate checker looks at sources, approvals, and what actually changed. <strong>"I did it" is not evidence.</strong></p><div class="station-vignette" aria-hidden="true"><svg viewBox="0 0 400 265" class="stage-svg" focusable="false">
+ <defs><linearGradient id="metal-prove" x1="0" y1="0" x2="0.9" y2="1"><stop stop-color="#316872"/><stop offset="1" stop-color="#163742"/></linearGradient></defs>
+ <ellipse cx="195" cy="230" rx="159" ry="23" fill="#000d16" opacity=".35"/>
+ <path d="M30 179 L198 114 L371 180 L204 248Z" fill="#1b4b54" stroke="#6bad9f" stroke-width="3"/>
+ <path d="M30 179V194L204 262V248Z" fill="#0e323d" stroke="#487976" stroke-width="2"/>
+ <path d="M204 248V262L371 194V180Z" fill="#143943" stroke="#487976" stroke-width="2"/>
+ <path d="M71 184L204 131L333 182L204 236Z" fill="none" stroke="#80b9a5" opacity=".19" stroke-width="2"/>
+ <path d="M112 169L243 222M152 153L284 209M193 137L323 193" stroke="#75b8aa" stroke-width="1" opacity=".19"/>
+<g class="vignette-bob"><rect x="121" y="92" width="104" height="115" rx="7" fill="#fff0d4" stroke="#f8ce8a" stroke-width="4"/><path d="M140 122h65M140 141h65M140 160h43" stroke="#547671" stroke-width="6" stroke-linecap="round"/><circle cx="187" cy="184" r="14" fill="none" stroke="#2e9a7b" stroke-width="4"/><path d="M179 184l5 5 11-12" fill="none" stroke="#2e9a7b" stroke-width="4"/></g>
+ <g class="vignette-loupe"><circle cx="229" cy="122" r="37" fill="#9bdafa" fill-opacity=".13" stroke="#91dbf2" stroke-width="9"/><path d="M254 150l36 43" stroke="#91dbf2" stroke-width="15" stroke-linecap="round"/></g>
+ <circle cx="91" cy="165" r="15" fill="#31594b" stroke="#8cf3d0" stroke-width="4"/><text x="91" y="171" text-anchor="middle" fill="#8cf3d0" font-size="18">✓</text></svg><div class="vignette-caption">STATION 05 / PROVE</div></div></div>
+  <div class="factory-floor"><div class="floor-top"><span>QUALITY CONTROL / EVIDENCE</span><span class="floor-lights" aria-hidden="true"><i></i><i></i><i></i></span></div>
+   <div class="qc-machine"><div class="qc-readout"><span class="qc-led"></span><b>INDEPENDENT INSPECTOR</b><small>Checks recorded effects, not an agent's self-review.</small></div><button id="qc-stamp" type="button" class="qc-stamp" aria-label="Stamp and recheck the evidence receipt"><span class="stamp-handle" aria-hidden="true">✓</span><b>STAMP THE PROOF</b></button></div>
+   <div class="receipt" id="quality-receipt"><div class="receipt-header"><div><strong>WORK RECEIPT</strong><small id="receipt-job">ORDER REF-240 · SIMULATED</small></div><div class="receipt-seal">CHECKED</div></div><div class="proof-list" id="proof-list" aria-live="polite"></div><div class="receipt-foot"><span>Independent inspector</span><span id="receipt-source">SOURCE / JIRA</span></div></div>
+  </div><p class="station-bottom">A denied shortcut belongs on the receipt too. Failed and blocked attempts are part of the evidence.</p>
+  <div class="connector" aria-hidden="true"><div class="crate">↓</div></div>
+ </div></section>
+
+ <section class="station" id="learn" aria-labelledby="learn-title"><div class="shell">
+  <div class="station-head"><div class="station-index"><span class="dot"></span>06 / LEARN · Training library</div><h2 id="learn-title">NEXT SHIFT.<br><em>SMARTER START.</em></h2><p class="station-explain">The crew disappears. The useful lesson doesn't have to. First, someone checks it. Then the factory gives the <strong>next</strong> crew a better briefing.</p><div class="station-vignette" aria-hidden="true"><svg viewBox="0 0 400 265" class="stage-svg" focusable="false">
+ <defs><linearGradient id="metal-learn" x1="0" y1="0" x2="0.9" y2="1"><stop stop-color="#316872"/><stop offset="1" stop-color="#163742"/></linearGradient></defs>
+ <ellipse cx="195" cy="230" rx="159" ry="23" fill="#000d16" opacity=".35"/>
+ <path d="M30 179 L198 114 L371 180 L204 248Z" fill="#1b4b54" stroke="#6bad9f" stroke-width="3"/>
+ <path d="M30 179V194L204 262V248Z" fill="#0e323d" stroke="#487976" stroke-width="2"/>
+ <path d="M204 248V262L371 194V180Z" fill="#143943" stroke="#487976" stroke-width="2"/>
+ <path d="M71 184L204 131L333 182L204 236Z" fill="none" stroke="#80b9a5" opacity=".19" stroke-width="2"/>
+ <path d="M112 169L243 222M152 153L284 209M193 137L323 193" stroke="#75b8aa" stroke-width="1" opacity=".19"/>
+<path d="M121 101L213 65L294 102L203 138Z" fill="#2c6b6b" stroke="#8cf3d0" stroke-width="3"/>
+ <path d="M121 101V177L203 212V138Z" fill="#164650" stroke="#8cf3d0" stroke-width="3"/>
+ <path d="M203 138L294 102V178L203 212Z" fill="#22565a" stroke="#8cf3d0" stroke-width="3"/>
+ <g><path d="M141 131l48 19M141 151l48 19M141 171l48 19" stroke="#9ee2b3" stroke-width="6" stroke-linecap="round"/></g>
+ <g class="vignette-kit"><rect x="246" y="119" width="42" height="40" rx="6" fill="#8cf3d0" stroke="#e4ffdc" stroke-width="4"/><text x="267" y="145" font-size="25" text-anchor="middle" fill="#14514b">✓</text></g>
+ <g class="vignette-bob"><rect x="69" y="111" width="44" height="48" rx="10" fill="#f3bd85" stroke="#8cf3d0" stroke-width="3"/><circle cx="81" cy="131" r="4" fill="#16464c"/><circle cx="102" cy="131" r="4" fill="#16464c"/></g>
+ <path d="M117 80L160 62" stroke="#ffbf6c" stroke-width="5" stroke-dasharray="8 6" class="vignette-dash"/></svg><div class="vignette-caption">STATION 06 / LEARN</div></div></div>
+  <div class="factory-floor"><div class="floor-top"><span>REVIEWED LEARNINGS / TWO SHIFTS</span><span class="floor-lights" aria-hidden="true"><i></i><i></i><i></i></span></div>
+   <div class="learn-rail"><div class="shift-card before"><div class="shift-tag">SHIFT 01 / DISCOVER</div><div class="shift-title">First crew learns something.</div><p id="shift-first">The first crew had to find both transaction IDs to explain the duplicate charge.</p></div>
+    <div class="memory-sorter" id="memory-sorter"><div class="memory-title">THE MEMORY SORTER</div><p>One lesson is supported by evidence. One is just a guess. <strong>Tap either card to test the sorting machine.</strong></p>
+     <div class="memory-choices"><button class="memory-choice" id="lesson-good" type="button"><span>✦</span><b id="good-choice-text">Match both transaction IDs.</b><small>BACKED BY THIS SHIFT'S EVIDENCE</small></button><button class="memory-choice" id="lesson-bad" type="button"><span>?</span><b id="bad-choice-text">Next time, skip the approvals.</b><small>SOUNDS EFFICIENT. ISN'T PROVEN.</small></button></div>
+     <div class="memory-verdict" id="memory-verdict" aria-live="polite"><span>◌</span> THE SORTER WILL ONLY KEEP VERIFIED LESSONS.</div>
+    </div>
+    <div class="shift-connector"><div class="review-stamp">REVIEWED LESSON ↓</div></div>
+    <div class="shift-card after" id="next-shift-card"><div class="shift-tag" id="next-shift-tag">SHIFT 02 / REUSE</div><div class="shift-title">New crew. Better briefing.</div><p>New temporary workers start with a reviewed lesson in their <strong>memory</strong> kit.</p><div class="lesson-box"><div class="label">NEW REVIEWED MEMORY</div><div class="value" id="lesson-text">Check both transaction IDs before issuing a refund.</div></div>
+     <div class="shift-comparison" id="shift-comparison" hidden aria-live="polite">
+      <div><span>SHIFT 01 MEMORY</span><strong>Prior reviewed patterns only</strong></div>
+      <div><span>SHIFT 02 MEMORY</span><strong id="new-memory-delta">New reviewed lesson included</strong></div>
+     </div>
+     <div class="mini-belt" aria-hidden="true"><span>▣</span><span>▤</span><span>▥</span><span>▣</span><span>▤</span></div>
+     <button type="button" id="run-next-shift" class="start-shift">▶ START A FRESH SHIFT</button><p class="next-shift-message" id="next-shift-message" aria-live="polite">Try it: a new crew gets a better briefing, not more authority.</p>
+    </div><div class="learn-rule">Same tools. Same access. Same company rules. <strong>Only the approved learning improves.</strong></div></div>
+  </div><p class="station-bottom">Learning can improve the next execution. It never quietly changes permission or gives a worker more authority.</p>
+  <div class="connector" aria-hidden="true"><div class="crate">✓</div></div>
+ </div></section>
+
+ <section class="outro shell" id="finish"><div class="outro-rule"></div><div class="eyebrow">End of shift</div><h2>THE CREW LEAVES.<br><em>THE FACTORY LEARNS.</em></h2><p><strong>That</strong> is the operating model. Describe the job. Assemble a bounded crew. Check the work. Carry the right lessons forward.</p><div class="recap"><span>Work first</span><span>One shift</span><span>Proof + learning</span></div><a class="replay" href="#orders">↻ RUN A DIFFERENT JOB</a></section>
+
+ <section class="blueprint" id="blueprint"><div class="shell"><div class="blueprint-head"><div class="blueprint-icon" aria-hidden="true">⚙</div><div><h2>THE FACTORY BLUEPRINT</h2><p>For the people who want to know what the machinery really needs. Tap a topic. No technical knowledge needed for the story above.</p></div></div>
+  <details><summary>01. The work order is the specification</summary><div class="detail-body"><p>The factory receives an outcome, source, requester, target scope, constraints and allowed business effects. It determines work type and risk before deciding who participates. A crew is an output of planning, not a roster of permanently deployed agents.</p><p>Some jobs need parallel investigations; some need multiple independent checks. A read-only research task doesn't need a payment tool or a Finance approval window.</p></div></details>
+  <details><summary>02. How the factory picks the crew</summary><div class="detail-body"><p>A typed work plan selects phases and roles based on the job's shape, policies, available tools, risk and evidence requirements. Workers are created with identities bound to the admitted work, tenant, scope, attempt and allowed actions. A specialist doesn't receive generic access to the organization.</p><p>Different routes may use parallel workers, sequential steps, human checkpoints or independent inspectors. The roles need not share one fixed template.</p></div></details>
+  <details><summary>03. Knowledge is not memory</summary><div class="detail-body"><p><strong>Knowledge</strong> is source material with ownership, versions, provenance and permissions. <strong>Memory</strong> is a previously observed lesson or preference with its own source, scope and verification status. Neither becomes universally trusted because an agent says so.</p><p>Context assembly draws on only the relevant, permitted items. Retrieval can help a worker find material; it does not grant access to material owned by another team. Lessons that fail review stay out of the next shift.</p></div></details>
+  <details><summary>04. Company rules become enforceable rules</summary><div class="detail-body"><p>Company-wide and team-level policies must be <strong>codified and versioned</strong>, not buried solely in prompts or operating procedure documents. Some guidance is advisory; effect-bearing rules are checked deterministically at the action boundary.</p><p>For example, a refund policy can state the approving role, exact amount ceiling, scope and required evidence. A child scope may tighten that rule but cannot override the parent's denial. Updating a parent rule invalidates stale permissions or approvals for future actions.</p></div></details>
+  <details><summary>05. Access is checked when the tool runs</summary><div class="detail-body"><p>Read permission is not payment permission. A worker may know a refund amount but still be unable to execute one. At every effectful action, the runtime should check tenant and scope, tool identity and version, action type, target, parameters, budget, approvals and current policy.</p><p>Credentials stay behind a broker or controlled tool boundary rather than being freely handed to the worker. A change of app, CLI or user interface must not bypass that enforcement point.</p></div></details>
+  <details><summary>06. Humans don't get assembled as agents</summary><div class="detail-body"><p>A human approval checkpoint is an actual named responsibility. Approval is bound to the precise proposed action: who approves, what tool and target, the arguments and amount, the allowed scope and the current policy version. Changing the action or policy can require a fresh approval.</p><p>Low-risk work may be permitted to complete without that checkpoint. Higher-impact work can stop and wait. A simulation of a signature is not a real approval.</p></div></details>
+  <details><summary>07. Inspection asks for evidence</summary><div class="detail-body"><p>The worker who writes or acts should not be its own final judge. Independent checks compare observed system state, acceptance criteria and durable artifacts. Logs alone do not establish that a business outcome is correct.</p><p>Receipts can reference source versions, parameter-bound approvals, action results, before/after states and denied attempts. The IDs shown in this film are illustrative, not actual transactions.</p></div></details>
+  <details><summary>08. Learning improves future shifts, not authority</summary><div class="detail-body"><p>Work may surface a useful discovery. Before it becomes reusable memory or published knowledge, qualified verification, source lineage, classification, scope and owner review matter. The factory can then give the next crew a better starting context.</p><p>That promotion does not expand a worker's permissions, grant new tools or weaken policy. Bad material may already have propagated to caches or downstream systems, so containment and reconciliation must be designed rather than assumed to be instant.</p></div></details>
+  <details><summary>09. What must exist underneath</summary><div class="detail-body"><p>To operate this model in a real enterprise, you need work intake and planning; identity and scope registry; policy authoring and deterministic evaluation; a tools catalog and credential boundary; knowledge and memory stores with provenance; context assembly; human approval services; execution coordination and retries; budget and effect admission; independent evaluation; audit and evidence retention; and operational monitoring.</p><p>The user-facing door can be Microsoft 365, Atlassian, a coding agent or a custom application. The common governed runtime is what makes those doors consistent.</p></div></details>
+  <details><summary>10. What's built versus what's an experiment</summary><div class="detail-body"><p><strong>Wicked Studio / Wicked Crew</strong> demonstrate important coding-workflow capabilities: intent-driven execution, scoped steering, phase gates, independent checking, agent-harness integration and evidence. <strong>Wicked AI Platform</strong> is a separate experiment, built on the side, that explores the wider enterprise picture: cross-domain authority, enterprise work scopes, policy and action admission, governed knowledge and organization-wide integration. It is an experiment, not a product.</p><p>This page is a design illustration, not a demonstration of a fully deployed end-to-end enterprise runtime. The work receipts and transactions are simulated. The distinction matters.</p></div></details>
+  <div class="notice">This is an interactive illustration of an architectural direction, not a live agent or transaction-processing service. All examples and receipt identifiers are fictional.</div>
+ </div></section>
+</main>
+<footer class="site-foot shell"><strong>An independent interactive by Mike Parcewski.</strong><br>© 2026 Mike Parcewski · <a href="https://wickedagile.com" target="_blank" rel="noopener noreferrer">wickedagile.com</a></footer>
+<script>
+(function(){
+'use strict';
+const JOBS={
+ refund:{id:'REF-240',title:'A customer was charged twice. Refund the extra $240.',shape:'MONEY MOVEMENT',description:'This job changes money, so Finance must approve the exact refund.',needs:[['⌕','Find the facts','Read the two charges'],['◎','Human decision','Finance approves $240'],['⚙','Take action','Refund exactly $240'],['✓','Check the result','Inspect payment record']],human:true,
+ crew:[['Support investigator','Find the duplicate charge','Billing history','Reviewed duplicate patterns','Read-only billing lookup','Investigate; no refund','finder'],['Payment operator','Make the approved refund','Exact signed refund','Verified refund steps','Payment refund tool','Only approved $240','doer'],['Independent inspector','Check the money moved','Expected ledger state','Past missed refunds','Read-only payment receipt','Verify only; no refund','checker']],
+ steps:[['⌕','Support investigates','Find the duplicate billing record.','worker'],['◉','Finance approval','A person signs the exact $240 refund.','human'],['⚙','Payment worker acts','One approved refund. Not an open-ended payment tool.','worker'],['✓','Independent inspection','A different worker checks the receipt.','worker']],
+ proof:[['Original charges matched','SRC-240-A'],['Human approval verified','FIN-APR-240'],['Refund state inspected','LEDGER-240-C']],
+ first:'The first crew discovers that matching both transaction IDs prevents a false refund.',lesson:'Match both transaction IDs before refunding.',shortcut:'Support cannot refund the money. Finance owns that decision.'},
+ launch:{id:'MKT-027',title:'Launch a new offer with the right message in every channel.',shape:'PUBLIC LAUNCH',description:'Multiple channels, a brand/legal decision and separate checks.',needs:[['⌕','Find the facts','Offer and audience'],['◎','Human decision','Brand and legal sign-off'],['⚙','Take action','Publish approved assets'],['✓','Check the result','Inspect web and email']],human:true,
+ crew:[['Campaign researcher','Verify the offer and audience','Approved offer terms','Past launch lessons','Approved source search','Read marketing only','finder'],['Campaign writer','Draft channel messages','Approved terms and style','Reviewed writing patterns','Draft editor','Draft; cannot publish','writer'],['Channel publisher','Publish signed assets','Signed copy and schedule','Safe publish procedure','Publishing tool','Approved assets only','doer'],['Web inspector','Inspect the landing page','Web acceptance rules','Past broken links','Read-only page check','No publishing','checker'],['Email inspector','Inspect email version','Signed email and audience','Past suppression mistakes','Read-only email preview','No sending','checker']],
+ steps:[['⌕','Research the offer','Confirm terms and audience.','worker'],['✎','Draft messages','Write the channel versions.','worker'],['◉','Brand + legal approve','A person signs the actual content.','human'],['⚙','Publish the release','Only signed versions go live.','worker'],['✓','Inspect web','Check the landing page.','parallel'],['✓','Inspect email','Check the email campaign.','parallel']],
+ proof:[['Offer matched source','OFFER-027'],['Brand + legal approved','SIGN-027'],['Web page checked','WEB-QC-027'],['Email checked','EMAIL-QC-027']],
+ first:'The first crew spots mismatched offer dates across channels.',lesson:'Compare dates and offer terms across every channel.',shortcut:'The copywriter cannot approve or publish its own campaign.'},
+ outage:{id:'OPS-421',title:'Payments are failing after a release. Restore service safely.',shape:'SERVICE RECOVERY',description:'Two investigations run in parallel before an approved recovery.',needs:[['⌕','Find the facts','Errors and orders, in parallel'],['◎','Human decision','Incident commander'],['⚙','Take action','One bounded rollback'],['✓','Check the result','Service and order state']],human:true,
+ crew:[['Service investigator','Find what failed','Release and service logs','Reviewed outage patterns','Read-only metrics','Observe; cannot deploy','finder'],['Order investigator','Check order integrity','Order lifecycle rules','Past lost-order patterns','Read-only order search','Observe; no edits','finder'],['Recovery operator','Execute one rollback','Signed recovery plan','Verified runbook','Restricted deploy tool','One approved release','doer'],['Recovery inspector','Check service and orders','Health and integrity criteria','Past false-green incidents','Read-only health checks','No deployments','checker']],
+ steps:[['⌕','Investigate service','Find release and error changes.','parallel'],['⌕','Investigate orders','Check integrity at the same time.','parallel'],['◉','Commander approves','A human signs the rollback target.','human'],['⚙','Restore the service','Execute one authorized rollback.','worker'],['✓','Inspect recovery','Check health AND orders.','worker']],
+ proof:[['Service symptoms confirmed','LOG-421'],['Order impact examined','ORDER-421'],['Commander signed action','CMD-421'],['Recovery state verified','HEALTH-421']],
+ first:'The first crew correlates the release with both errors and order integrity.',lesson:'Compare release, errors and orders before recovery.',shortcut:'An investigator cannot roll back production without incident-command authority.'},
+ research:{id:'CX-ASK',title:'Summarize customer feedback and cite what people are saying.',shape:'READ + SUMMARIZE',description:'Read-only research needs sources and a checker, not an approval queue.',needs:[['⌕','Find the facts','Approved feedback only'],['◎','Human decision','Not needed for this job'],['✎','Create a draft','Cited feedback summary'],['✓','Check the result','Independent source check']],human:false,
+ crew:[['Feedback finder','Find allowed feedback','Approved customer feedback','Reviewed category definitions','Scoped search','Read only','finder'],['Summary writer','Write the cited brief','Grounded customer excerpts','Reviewed summary patterns','Document draft tool','Draft; no publishing','writer'],['Citation inspector','Check every claim','Claim/source rules','Past weak evidence','Citation checker','Inspect; no export','checker']],
+ steps:[['⌕','Find the feedback','Search only allowed sources.','worker'],['✎','Draft the summary','Attach citations to claims.','worker'],['✓','Inspect the claims','A separate worker checks the sources.','worker']],
+ proof:[['Search stayed in scope','CX-SRC-01'],['Cited summary created','CX-DOC-02'],['Claims independently checked','CX-QC-03']],
+ first:'The first crew finds a popular claim with too small a sample.',lesson:'Flag weak samples before calling a pattern a trend.',shortcut:'A feedback researcher cannot open private HR files to improve a summary.'}
+};
+const DOORS={m365:'MICROSOFT 365',jira:'JIRA',cli:'CODING AGENT',app:'BUSINESS APP'};
+const state={job:'refund',door:'jira',denied:false,halted:false,haltCargoTop:null,roundTwo:false,sound:false,lessonChoice:null};
+const $=id=>document.getElementById(id);
+function el(tag,className,text){const n=document.createElement(tag);if(className)n.className=className;if(text!==undefined)n.textContent=text;return n}
+function render(){
+ const j=JOBS[state.job];
+ $('ticket-origin').textContent=DOORS[state.door]; $('ticket-id').textContent=j.id;$('ticket-text').textContent=j.title;
+ document.querySelectorAll('[data-door]').forEach(n=>n.setAttribute('aria-pressed',String(n.dataset.door===state.door)));
+ document.querySelectorAll('[data-job]').forEach(n=>n.setAttribute('aria-pressed',String(n.dataset.job===state.job)));
+ $('recipe-title').textContent=j.shape;$('recipe-description').textContent=j.description;
+ $('requirements').replaceChildren();j.needs.forEach(([icon,title,sub],i)=>{
+  const off=!j.human&&i===1;const row=el('div','requirement'+(off?' off':''));row.style.setProperty('--n',i);
+  row.append(el('div','req-icon',icon));const copy=el('div');copy.append(el('div','req-title',title),el('div','req-sub',sub));row.append(copy,el('div','req-status',off?'SKIP':'NEEDED'));$('requirements').append(row);
+ });
+ $('sort-summary').textContent=j.human?'Decision checkpoint included. Only the needed roles are hired.':'No human approval window. No unnecessary action tools.';
+ $('crew-count').textContent=j.crew.length;
+ $('roster').replaceChildren();j.crew.forEach(([name,mission,know,memory,tools,access,kind],i)=>{
+  const card=el('article','employee');card.style.setProperty('--i',i);
+  const bot=el('button','bot-head '+kind);bot.type='button';bot.setAttribute('aria-label','Meet '+name+' and hear its limits');bot.style.setProperty('--i',i);bot.append(el('span','bot-eyes','••'));
+  const head=el('div','employee-title');head.append(el('div','employee-num','WORKER '+String(i+1).padStart(2,'0')+' / ONE SHIFT'),el('h3','',name),el('p','',mission));
+  const kit=el('div','kit');kit.id='worker-kit-'+i;
+  [['KNOW',know],['MEMORY',memory],['TOOLS',tools],['ACCESS',access]].forEach(([label,value])=>{
+   const row=el('div','kit-row');const lab=el('div','kit-label');lab.append(el('i'),document.createTextNode(label));row.append(lab,el('div','kit-value',value));kit.append(row)
+  });
+  const toggle=el('button','kit-toggle');toggle.type='button';toggle.setAttribute('aria-controls',kit.id);
+  const stamp=el('div','employee-stamp','✓ EQUIPPED FOR THIS SHIFT');
+  const setOpen=on=>{kit.hidden=!on;stamp.hidden=!on;card.classList.toggle('kit-closed',!on);toggle.setAttribute('aria-expanded',String(on));toggle.textContent=on?'HIDE KIT −':'VIEW KIT +'};
+  toggle.addEventListener('click',()=>{setOpen(toggle.getAttribute('aria-expanded')!=='true');playSound('robot')});
+  bot.addEventListener('click',()=>{const was=card.classList.contains('hello');document.querySelectorAll('.employee.hello').forEach(c=>{c.classList.remove('hello');c.querySelector('.bot-head')?.classList.remove('awake');c.querySelector('.worker-quip')?.remove()});if(!was){setOpen(true);card.classList.add('hello');bot.classList.add('awake');const quips={finder:'I find the facts. I cannot make the business decision or change records.',writer:'I draft. I cannot publish or approve my own writing.',doer:'I use one assigned tool. Every action still goes through the factory rules.',checker:'I did not perform the action. That is why I can inspect it independently.'};card.append(el('div','worker-quip',quips[kind]+' My limit: '+access+'.'));celebrate(bot,5);playSound('robot')}});
+  card.append(bot,head,toggle,kit,stamp);$('roster').append(card);
+  if(state.roundTwo&&i===0){card.classList.add('trained');kit.querySelectorAll('.kit-row')[1].querySelector('.kit-value').textContent='Reviewed lesson: '+j.lesson}
+  setOpen(i===0);
+ });
+ $('line-order').textContent=j.id;$('line-steps').replaceChildren();j.steps.forEach(([symbol,title,description,kind])=>{
+  const node=el('div','line-step'+(kind==='human'?' human':''));node.append(el('div','line-marker',kind==='human'?'♟':symbol));const copy=el('div','line-detail');
+  copy.append(el('div','line-type',kind==='human'?'HUMAN CHECKPOINT':kind==='parallel'?'AI WORKER / IN PARALLEL':'AI WORKER'),el('h3','',title),el('p','',description));
+  if(kind==='parallel')copy.append(el('span','parallel-tag','RUNS ALONGSIDE ANOTHER TASK'));
+  node.append(copy);$('line-steps').append(node);
+ });
+ $('run-status').textContent=state.halted?'LINE HALTED':state.denied?'LINE RESTORED':'LINE RUNNING';
+ $('denied-reason').textContent=j.shortcut+' The attempt was denied, logged, and cannot be turned into permission.';$('denied').hidden=!state.denied;document.getElementById('run').classList.toggle('halted',state.halted);document.getElementById('skip-test').disabled=state.halted;
+ $('skip-test').querySelector('.lever-text b').textContent=state.denied?'STILL DENIED.':'PULL THE RED LEVER';document.querySelector('#denied .denied-title').textContent=state.halted?'⛔ LINE STOPPED. ACTION DENIED.':state.denied?'✓ APPROVED ROUTE RESTORED':'⛔ LINE STOPPED. ACTION DENIED.';
+ $('receipt-job').textContent='ORDER '+j.id+' · SIMULATED';$('receipt-source').textContent='SOURCE / '+DOORS[state.door];
+ $('proof-list').replaceChildren();j.proof.forEach(([label,token])=>{let row=el('div','proof');const inner=el('div');inner.append(el('b','',label),el('code','',token+' · SIMULATED'));row.append(el('div','proof-mark','✓'),inner);$('proof-list').append(row)});
+ if(state.denied){const row=el('div','proof denial-row');const inner=el('div');inner.append(el('b','','Unauthorized action denied'),el('code','','DENIED-'+j.id+' · SIMULATED'));row.append(el('div','proof-mark','✕'),inner);$('proof-list').append(row)}
+ $('shift-first').textContent=j.first;$('lesson-text').textContent=j.lesson;$('new-memory-delta').textContent=j.lesson;
+ $('good-choice-text').textContent=j.lesson;
+ $('bad-choice-text').textContent=({refund:'Let Support refund anything next time.',launch:'Next time, approve every campaign automatically.',outage:'Skip the commander when a rollback looks obvious.',research:'Trust the loudest comment as a universal trend.'})[state.job];
+ $('next-shift-card').classList.toggle('activated',state.roundTwo);
+ $('next-shift-tag').textContent=state.roundTwo?'SHIFT 02 / NEW CREW ONLINE':'SHIFT 02 / REUSE';
+ $('shift-comparison').hidden=!state.roundTwo;
+ $('run-next-shift').textContent=state.roundTwo?'↺ RESET TO SHIFT 01':'▶ START A FRESH SHIFT';
+ const message=$('next-shift-message');message.replaceChildren();
+ if(state.roundTwo){
+  message.append(document.createTextNode('NEW CREW TRAINED. The reviewed lesson is now in its memory kit. Same tools. Same access. '));
+  const a=el('a','memory-link','↑ See the new kit in Assembly');a.href='#equip';
+  a.addEventListener('click',e=>{
+   const kit=$('worker-kit-0');if(!kit)return;
+   e.preventDefault();
+   const worker=kit.closest('.employee');const toggle=worker?.querySelector('.kit-toggle');
+   if(toggle?.getAttribute('aria-expanded')==='false')toggle.click();
+   const memory=kit.querySelectorAll('.kit-row')[1];if(!memory)return;
+   memory.classList.remove('memory-focus');void memory.offsetWidth;memory.classList.add('memory-focus');
+   memory.scrollIntoView({behavior:reduce()?'auto':'smooth',block:'center'});
+   window.setTimeout(()=>memory.classList.remove('memory-focus'),2600);
+  });
+  message.append(a)
+ }
+ else message.textContent=state.lessonChoice==='bad'?'That guess was rejected. Only the reviewed lesson can train the next crew.':'The verified lesson is ready for the next shift. Try running it.';
+ document.querySelectorAll('.memory-choice').forEach(b=>b.setAttribute('aria-pressed',String(b.id===(state.lessonChoice==='good'?'lesson-good':state.lessonChoice==='bad'?'lesson-bad':'none'))));
+ if(state.lessonChoice===null){$('memory-verdict').textContent='◌ THE SORTER WILL ONLY KEEP VERIFIED LESSONS.';$('memory-verdict').className='memory-verdict';}
+ else{$('memory-verdict').textContent=state.lessonChoice==='good'?'✓ PROMOTED. THE NEXT CREW MAY USE THIS.':'✕ QUARANTINED. A GUESS IS NOT KNOWLEDGE.';$('memory-verdict').className='memory-verdict '+(state.lessonChoice==='good'?'approved':'quarantined');}
+
+}
+const reduce=()=>window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+let audio=null;
+function playSound(which){
+ if(!state.sound)return;
+ try{audio=audio||new (window.AudioContext||window.webkitAudioContext)();if(audio.state==='suspended')audio.resume();const now=audio.currentTime;
+ const sequences={drop:[[440,.00,.07],[660,.09,.08]],scan:[[280,.00,.06],[380,.09,.06],[570,.18,.11]],robot:[[700,0,.06],[875,.08,.06]],deny:[[240,0,.18],[190,.24,.22]],stamp:[[135,0,.095]],approved:[[520,0,.08],[720,.12,.12]],rejected:[[210,0,.17]],shift:[[350,0,.08],[550,.11,.08],[800,.22,.14]]};
+ (sequences[which]||sequences.drop).forEach(([freq,delay,duration])=>{const osc=audio.createOscillator(),gain=audio.createGain();osc.type=which==='deny'?'sawtooth':'sine';osc.frequency.setValueAtTime(freq,now+delay);gain.gain.setValueAtTime(.0001,now+delay);gain.gain.exponentialRampToValueAtTime(which==='deny'?.065:.035,now+delay+.01);gain.gain.exponentialRampToValueAtTime(.0001,now+delay+duration);osc.connect(gain);gain.connect(audio.destination);osc.start(now+delay);osc.stop(now+delay+duration+.02)})}catch(e){}
+}
+function celebrate(target,n=7){if(reduce())return;const rect=target.getBoundingClientRect();for(let i=0;i<n;i++){const p=el('span','spare-confetti');p.style.left=(rect.left+rect.width/2)+'px';p.style.top=(rect.top+rect.height/2)+'px';const a=i/n*Math.PI*2;p.style.setProperty('--x',(Math.cos(a)*(48+i*7))+'px');p.style.setProperty('--y',(Math.sin(a)*(47+i*6)-15)+'px');p.style.background=['#8cf3d0','#ffbf6c','#9bdaff','#ccb3ff'][i%4];document.body.append(p);setTimeout(()=>p.remove(),970)}}
+function orderDrop(){
+ const floor=$('receiving-floor');floor.querySelectorAll('.loading-ticket').forEach(x=>x.remove());
+ const packet=el('div','loading-ticket','↧');packet.setAttribute('aria-hidden','true');floor.append(packet);
+ const paper=floor.querySelector('.order-paper');paper.classList.remove('ticket-flash');void paper.offsetWidth;paper.classList.add('ticket-flash');
+ $('dock-status').textContent='✓ '+DOORS[state.door]+' → WORK ORDER ACCEPTED';
+ setTimeout(()=>packet.remove(),1160);setTimeout(()=>paper.classList.remove('ticket-flash'),780);playSound('drop');
+}
+let scanTimer=null;
+function runScanner(){
+ const sorter=$('sorter-machine');sorter.classList.remove('scanning');void sorter.offsetWidth;sorter.classList.add('scanning');$('scan-status').textContent='▥ SCANNING WORK SHAPE · SELECTING ONLY WHAT IS NEEDED';
+ clearTimeout(scanTimer);scanTimer=setTimeout(()=>{sorter.classList.remove('scanning');$('scan-status').textContent='✓ RECIPE READY · '+JOBS[state.job].crew.length+' TEMPORARY AI WORKERS';},1050);playSound('scan')
+}
+function resetJob(){state.denied=false;state.halted=false;state.haltCargoTop=null;state.roundTwo=false;state.lessonChoice=null;render();runScanner();requestPaint()}
+document.querySelectorAll('[data-job]').forEach(button=>button.addEventListener('click',()=>{state.job=button.dataset.job;resetJob();orderDrop();celebrate(button,8)}));
+document.querySelectorAll('[data-door]').forEach(button=>button.addEventListener('click',()=>{state.door=button.dataset.door;render();orderDrop();celebrate(button,5)}));
+$('scan-job').addEventListener('click',()=>{runScanner();celebrate($('scan-job'),7)});
+$('sound-toggle').addEventListener('click',()=>{state.sound=!state.sound;$('sound-toggle').setAttribute('aria-pressed',String(state.sound));$('sound-toggle').textContent=state.sound?'♫ SOUND: ON':'♫ SOUND: OFF';if(state.sound)playSound('approved')});
+function pullShortcut(){if(state.halted)return;state.denied=true;state.halted=true;state.haltCargoTop=null;render();requestPaint();playSound('deny');celebrate($('skip-test'),7);$('denied').scrollIntoView({block:'nearest',behavior:reduce()?'auto':'smooth'})}
+let leverGesture=null,suppressLeverClick=false;
+const lever=$('skip-test');
+lever.addEventListener('pointerdown',e=>{if(e.button!==0||state.halted)return;leverGesture={id:e.pointerId,y:e.clientY,dragged:false};try{lever.setPointerCapture(e.pointerId)}catch(ex){};});
+lever.addEventListener('pointermove',e=>{if(!leverGesture||leverGesture.id!==e.pointerId||state.halted)return;const dy=Math.max(0,Math.min(30,e.clientY-leverGesture.y));lever.style.setProperty('--pull',dy+'px');if(dy>=22){leverGesture.dragged=true;suppressLeverClick=true;pullShortcut();setTimeout(()=>{suppressLeverClick=false},350)}});
+lever.addEventListener('pointerup',()=>{leverGesture=null;if(!state.halted)lever.style.setProperty('--pull','0px')});
+lever.addEventListener('pointercancel',()=>{leverGesture=null;lever.style.setProperty('--pull','0px')});
+lever.addEventListener('click',()=>{if(!suppressLeverClick)pullShortcut()});
+$('resume-line').addEventListener('click',()=>{state.halted=false;state.haltCargoTop=null;lever.style.setProperty('--pull','0px');render();requestPaint();const d=$('denied');d.querySelector('.denied-title').textContent='✓ APPROVED ROUTE RESTORED';celebrate(d,9);playSound('approved')});
+$('qc-stamp').addEventListener('click',()=>{const btn=$('qc-stamp'),receipt=$('quality-receipt');btn.classList.remove('stamping');receipt.classList.remove('just-stamped');void btn.offsetWidth;btn.classList.add('stamping');receipt.classList.add('just-stamped');celebrate(btn,10);playSound('stamp');setTimeout(()=>{btn.classList.remove('stamping');receipt.classList.remove('just-stamped')},850)});
+for(const name of ['good','bad'])$('lesson-'+name).addEventListener('click',()=>{state.lessonChoice=name;render();celebrate($('lesson-'+name),name==='good'?11:4);const v=$('memory-verdict');v.classList.add('celebrate');setTimeout(()=>v.classList.remove('celebrate'),570);playSound(name==='good'?'approved':'rejected')});
+$('run-next-shift').addEventListener('click',()=>{state.roundTwo=!state.roundTwo;render();celebrate($('run-next-shift'),state.roundTwo?17:5);playSound(state.roundTwo?'shift':'drop')});
+
+
+function updateProgress(){const h=document.documentElement;const d=Math.max(1,h.scrollHeight-window.innerHeight);$('progress').style.width=(Math.min(100,Math.max(0,100*window.scrollY/d)))+'%'}
+let scrollTick=false;
+function paintFactory(){scrollTick=false;updateProgress();const vh=window.innerHeight;
+ document.querySelectorAll('.station').forEach(section=>{const r=section.getBoundingClientRect();const p=Math.max(0,Math.min(1,(vh*.87-r.top)/(Math.max(1,r.height)+vh*.72)));section.style.setProperty('--scene',p.toFixed(3));});
+ document.body.classList.toggle('past-hero',document.querySelector('.hero').getBoundingClientRect().bottom<vh*.78);
+ const sectionIds=['receive','route','equip','run','prove','learn'];
+ let current='receive';for(const id of sectionIds){const r=$(id).getBoundingClientRect();if(r.top<=vh*.52)current=id;}
+ document.querySelectorAll('[data-floor],[data-floor-nav]').forEach(node=>{const match=(node.dataset.floor||node.dataset.floorNav)===current;node.classList.toggle('is-current',match);if(match)node.setAttribute('aria-current','location');else node.removeAttribute('aria-current')});
+ document.querySelectorAll('.connector').forEach(x=>{const r=x.getBoundingClientRect();const p=Math.max(0,Math.min(1,(vh*.84-r.top)/(vh*.5+r.height)));x.style.setProperty('--travel',p.toFixed(3))});
+ const steps=$('line-steps'),cargo=$('moving-cargo'),r=steps.getBoundingClientRect();
+ if(cargo&&!reduce()){
+  const progress=Math.max(0,Math.min(1,(vh*.7-r.top)/(Math.max(1,r.height)+vh*.20)));
+  let next=steps.offsetTop+14+Math.max(0,r.height-55)*progress;
+  if(state.halted){
+   const checkpoint=steps.querySelector('.line-step.human')||steps.children[Math.min(1,steps.children.length-1)];
+   const stopAt=steps.offsetTop+Math.max(10,(checkpoint?.offsetTop||0)-12);
+   if(state.haltCargoTop===null)state.haltCargoTop=Math.min(next,stopAt);
+   next=state.haltCargoTop;
+  }
+  cargo.style.top=Math.round(next)+'px';cargo.style.opacity=(r.bottom<0||r.top>vh)?'0':'1';
+ }
+}
+function requestPaint(){if(!scrollTick){scrollTick=true;requestAnimationFrame(paintFactory)}}
+window.addEventListener('scroll',requestPaint,{passive:true});window.addEventListener('resize',requestPaint,{passive:true});
+
+if('IntersectionObserver'in window){
+ const floorObserver=new IntersectionObserver(entries=>{entries.forEach(e=>e.target.classList.toggle('in-view',e.isIntersecting))},{threshold:.1});
+ document.querySelectorAll('.station').forEach(x=>floorObserver.observe(x));
+ const machineObserver=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('fired');machineObserver.unobserve(e.target)}})},{threshold:.28});
+ const wire=()=>document.querySelectorAll('.employee,.requirement,.line-step,.proof,.shift-card').forEach(x=>machineObserver.observe(x));
+ const oldRender=render;
+ render=()=>{oldRender();wire()};
+ wire();
+}
+render();requestPaint();
+})();
+</script>
+</body>
+</html>
