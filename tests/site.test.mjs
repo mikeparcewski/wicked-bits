@@ -6,7 +6,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import config from '../astro.config.mjs';
 import { BITS } from '../src/data/bits.js';
@@ -14,7 +14,10 @@ import { BITS } from '../src/data/bits.js';
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const BASE = (config.base ?? '/').replace(/\/?$/, '/');
 const sha = (p) => createHash('sha256').update(readFileSync(p)).digest('hex');
-const INDEX = join(ROOT, 'dist/index.html');
+const DIST = join(ROOT, 'dist');
+const INDEX = join(DIST, 'index.html');
+// how Astro escapes text (html-escaper), so a title with & or quotes is found in the markup
+const esc = (t) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 const html = () => {
   assert.ok(existsSync(INDEX), 'dist/index.html exists (run npm run build)');
   return readFileSync(INDEX, 'utf8');
@@ -28,33 +31,62 @@ test('the index carries the title, the intro and a card for every bit, linked un
   for (const b of BITS) {
     assert.match(b.slug, /^[a-z0-9-]+$/, `${b.title}: slug is one folder name`);
     assert.ok(page.includes(`href="${BASE}${b.slug}/"`), `${b.title}: linked at ${BASE}${b.slug}/`);
-    assert.ok(page.includes(b.title), `${b.title}: titled`);
+    assert.ok(page.includes(esc(b.title)), `${b.title}: titled`);
   }
 });
 
-// Every reference a page or stylesheet makes (href/src in any quoting, CSS url()), resolved against
-// where it is deployed, the way a browser resolves it. Same-origin ones must stay under BASE and exist.
+// Every reference a page or stylesheet makes (href/src in any quoting, srcset candidates, CSS url()
+// and @import), resolved against where it is deployed, the way a browser resolves it. Same-origin
+// ones must stay under BASE and exist in dist (after decoding, so %2e%2e%2f cannot climb out).
 const PAGE = new URL(BASE, config.site);
-const refs = (text) => [
-  ...text.matchAll(/\b(?:href|src)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'>]+))/gi),
-  ...text.matchAll(/url\(\s*(?:"([^"]*)"|'([^']*)'|([^)\s]*))\s*\)/gi),
-].map((m) => m[1] ?? m[2] ?? m[3]);
+const QUOTED = String.raw`\s*(?:"([^"]*)"|'([^']*)'|([^\s"'>]+))`;
+const refs = (text) => {
+  const one = (m) => m[1] ?? m[2] ?? m[3];
+  const out = [
+    ...[...text.matchAll(new RegExp(String.raw`\b(?:href|src)\s*=` + QUOTED, 'gi'))].map(one),
+    ...[...text.matchAll(/url\(\s*(?:"([^"]*)"|'([^']*)'|([^)\s]*))\s*\)/gi)].map(one),
+    ...[...text.matchAll(/@import\s+(?:"([^"]*)"|'([^']*)')/gi)].map(one),
+  ];
+  for (const m of text.matchAll(new RegExp(String.raw`\bsrcset\s*=` + QUOTED, 'gi'))) {
+    out.push(...one(m).split(',').map((c) => c.trim().split(/\s+/)[0]).filter(Boolean));
+  }
+  return out;
+};
 const toDist = (url) => {
   const rel = decodeURIComponent(url.pathname.slice(BASE.length));
-  return join(ROOT, 'dist', rel === '' || rel.endsWith('/') ? `${rel}index.html` : rel);
+  const file = resolve(DIST, rel === '' || rel.endsWith('/') ? `${rel}index.html` : rel);
+  return file.startsWith(DIST + sep) ? file : null;
 };
-function checkRefs(file, at, seen = new Set()) {
+function checkText(text, at, seen = new Set()) {
   const bad = [];
-  for (const raw of refs(readFileSync(file, 'utf8'))) {
+  for (const raw of refs(text)) {
     const url = new URL(raw, at);
     if (url.origin !== PAGE.origin) continue; // other sites, data:, mailto:
     if (!url.pathname.startsWith(BASE)) { bad.push(`${raw} -> ${url.pathname} escapes ${BASE}`); continue; }
     const target = toDist(url);
+    if (!target) { bad.push(`${raw} -> ${url.pathname} escapes dist`); continue; }
     if (!existsSync(target)) { bad.push(`${raw} -> ${url.pathname} is not in dist`); continue; }
-    if (target.endsWith('.css') && !seen.has(target)) { seen.add(target); bad.push(...checkRefs(target, url, seen)); }
+    if (target.endsWith('.css') && !seen.has(target)) { seen.add(target); bad.push(...checkText(readFileSync(target, 'utf8'), url, seen)); }
   }
   return bad;
 }
+const checkRefs = (file, at, seen) => checkText(readFileSync(file, 'utf8'), at, seen);
+
+test('the reference check itself catches every escaping form', () => {
+  html(); // needs dist
+  const cases = [
+    '<link rel="stylesheet" href="../missing.css">',          // a relative climb out of the base
+    '<a href=/wicked-bits/../other/>x</a>',                     // a climb inside the path
+    `<img src='nope.png'>`,                                     // a missing file
+    '<style>.x{background:url(/escape.png)}</style>',           // CSS url()
+    '<style>@import "/outside.css";</style>',                  // CSS @import
+    '<img srcset="/escape.png 1x, /wicked-bits/nope2.png 2x">', // srcset candidates
+    '<a href="/wicked-bits/%2e%2e%2fpackage.json">x</a>',       // an encoded climb out of dist
+  ];
+  for (const c of cases) assert.equal(checkText(c, PAGE).length > 0, true, c);
+  assert.equal(checkText('<img srcset="/escape.png 1x, /wicked-bits/nope2.png 2x">', PAGE).length, 2);
+  assert.deepEqual(checkText(`<a href="#top">x</a><a href="https://wickedagile.com">y</a><img src="${BASE}favicon.svg">`, PAGE), []);
+});
 
 test('every same-origin reference on the index and in its stylesheets stays under the base and exists', () => {
   const page = html();
