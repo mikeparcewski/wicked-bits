@@ -46,7 +46,9 @@ The site is served at https://bits.wickedagile.com/, set in three places:
   The github.io URL redirects to the domain. To change the setting, keep the domain in the same call:
   `gh api -X PUT repos/mikeparcewski/wicked-bits/pages -f cname=bits.wickedagile.com -F https_enforced=true`.
 - **This repo:** `SITE` and `BASE` (`'/'`, a domain root) in `astro.config.mjs`, and `public/CNAME`
-  (`npm test` checks a CNAME ships exactly when `BASE` is `'/'`).
+  (`npm test` checks a CNAME ships exactly when `BASE` is `'/'`). A new Pages setting serves the last
+  deploy at the new address, built for the old `BASE`, so to move the site, merge the matching
+  `SITE`/`BASE` change within minutes of changing the setting.
 
 The family header, footer and promo card take the address from `BITS` in wicked-web's
 `src/data/family.js`; each family site follows when it re-pins wicked-web.

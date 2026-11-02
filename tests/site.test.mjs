@@ -55,21 +55,22 @@ const refs = (text) => {
   }
   return out;
 };
-const toDist = (url) => {
-  const rel = decodeURIComponent(url.pathname.slice(BASE.length));
+const toDist = (url, base = BASE) => {
+  const rel = decodeURIComponent(url.pathname.slice(base.length));
   const file = resolve(DIST, rel === '' || rel.endsWith('/') ? `${rel}index.html` : rel);
   return file.startsWith(DIST + sep) ? file : null;
 };
-function checkText(text, at, seen = new Set()) {
+// `base` is BASE except in the self-test, which also checks a site under a path.
+function checkText(text, at, seen = new Set(), base = BASE) {
   const bad = [];
   for (const raw of refs(text)) {
     const url = new URL(raw, at);
     if (url.origin !== PAGE.origin) continue; // other sites, data:, mailto:
-    if (!url.pathname.startsWith(BASE)) { bad.push(`${raw} -> ${url.pathname} escapes ${BASE}`); continue; }
-    const target = toDist(url);
+    if (!url.pathname.startsWith(base)) { bad.push(`${raw} -> ${url.pathname} escapes ${base}`); continue; }
+    const target = toDist(url, base);
     if (!target) { bad.push(`${raw} -> ${url.pathname} escapes dist`); continue; }
     if (!existsSync(target)) { bad.push(`${raw} -> ${url.pathname} is not in dist`); continue; }
-    if (target.endsWith('.css') && !seen.has(target)) { seen.add(target); bad.push(...checkText(readFileSync(target, 'utf8'), url, seen)); }
+    if (target.endsWith('.css') && !seen.has(target)) { seen.add(target); bad.push(...checkText(readFileSync(target, 'utf8'), url, seen, base)); }
   }
   return bad;
 }
@@ -78,7 +79,7 @@ const checkRefs = (file, at, seen) => checkText(readFileSync(file, 'utf8'), at, 
 test('the reference check itself catches every escaping form', () => {
   html(); // needs dist
   const cases = [
-    '<link rel="stylesheet" href="../missing.css">',          // a relative climb out of the base
+    '<link rel="stylesheet" href="../missing.css">',          // a relative climb
     `<a href=${BASE}../other/>x</a>`,                           // a climb inside the path
     `<img src='nope.png'>`,                                     // a missing file
     '<style>.x{background:url(/escape.png)}</style>',           // CSS url()
@@ -91,6 +92,13 @@ test('the reference check itself catches every escaping form', () => {
   // the encoded climb is caught as an escape, not only as a missing file, wherever the base sits
   assert.match(checkText(`<a href="${BASE}%2e%2e%2fpackage.json">x</a>`, PAGE).join(), /escapes dist/);
   assert.deepEqual(checkText(`<a href="#top">x</a><a href="https://wickedagile.com">y</a><img src="${BASE}favicon.svg">`, PAGE), []);
+  // At a domain root nothing same-origin is outside the base, so check the base rule with the site
+  // under a path, against files that exist: only the escape can fail them.
+  const SUB = '/sub/', at = new URL(SUB, PAGE);
+  for (const c of ['<link href="../favicon.svg">', '<link href="/sub/../favicon.svg">', '<img src="/favicon.svg">']) {
+    assert.deepEqual(checkText(c, at, new Set(), SUB), [`${c.match(/"([^"]*)"/)[1]} -> /favicon.svg escapes ${SUB}`], c);
+  }
+  assert.deepEqual(checkText('<img src="favicon.svg"><a href="/sub/the-work-factory/">x</a>', at, new Set(), SUB), []);
 });
 
 test('every same-origin reference on the index and in its stylesheets stays under the base and exists', () => {
