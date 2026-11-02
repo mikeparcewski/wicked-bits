@@ -8,10 +8,14 @@
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
-    "test": "node --test tests/site.test.mjs"
+    "test": "node --test tests/site.test.mjs",
+    "test:e2e": "node --test tests/load.e2e.mjs"
   },
   "dependencies": {
     "astro": "^7.3.2",
     "wicked-web": "github:mikeparcewski/wicked-web#cecfe2e88d63d0461bad85aff93b9d59f310499f"
+  },
+  "devDependencies": {
+    "playwright": "1.64.0"
   }
 }
