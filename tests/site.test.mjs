@@ -91,19 +91,22 @@ test('the reference check itself catches every escaping form', () => {
   assert.equal(checkText(`<img srcset="/escape.png 1x, ${BASE}nope2.png 2x">`, PAGE).length, 2);
   // the encoded climb is caught as an escape, not only as a missing file, wherever the base sits
   assert.match(checkText(`<a href="${BASE}%2e%2e%2fpackage.json">x</a>`, PAGE).join(), /escapes dist/);
-  assert.deepEqual(checkText(`<a href="#top">x</a><a href="https://wickedagile.com">y</a><img src="${BASE}favicon.svg">`, PAGE), []);
+  assert.deepEqual(checkText(`<a href="#top">x</a><a href="https://wickedagile.com">y</a><a href="${BASE}the-work-factory/">z</a>`, PAGE), []);
   // At a domain root nothing same-origin is outside the base, so check the base rule with the site
   // under a path, against files that exist: only the escape can fail them.
   const SUB = '/sub/', at = new URL(SUB, PAGE);
-  for (const c of ['<link href="../favicon.svg">', '<link href="/sub/../favicon.svg">', '<img src="/favicon.svg">']) {
-    assert.deepEqual(checkText(c, at, new Set(), SUB), [`${c.match(/"([^"]*)"/)[1]} -> /favicon.svg escapes ${SUB}`], c);
+  // (the favicon is Base's bundled family mark now, so the one file every build has is the bit's page)
+  for (const c of ['<a href="../the-work-factory/">', '<a href="/sub/../the-work-factory/">', '<a href="/the-work-factory/">']) {
+    assert.deepEqual(checkText(c, at, new Set(), SUB), [`${c.match(/"([^"]*)"/)[1]} -> /the-work-factory/ escapes ${SUB}`], c);
   }
-  assert.deepEqual(checkText('<img src="favicon.svg"><a href="/sub/the-work-factory/">x</a>', at, new Set(), SUB), []);
+  assert.deepEqual(checkText('<a href="the-work-factory/">y</a><a href="/sub/the-work-factory/">x</a>', at, new Set(), SUB), []);
 });
 
 test('every same-origin reference on the index and in its stylesheets stays under the base and exists', () => {
   const page = html();
-  assert.ok(page.includes(`href="${BASE}favicon.svg"`), 'the favicon is base-aware');
+  // the family favicon (wicked-web Base: the Shoreline mark), bundled by Vite: inlined, or a file under the base
+  const icon = /<link rel="icon" href="([^"]+)" type="image\/svg\+xml"/.exec(page)?.[1];
+  assert.ok(icon && (icon.startsWith('data:image/svg+xml') || icon.startsWith(BASE)), `the favicon is the bundled family mark: ${icon}`);
   const seen = new Set();
   assert.deepEqual(checkRefs(INDEX, PAGE, seen), []);
   assert.ok(seen.size > 0, 'the index links at least one stylesheet, and it was checked');
