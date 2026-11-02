@@ -30,6 +30,8 @@ source instead; CI and the deploy have no such checkout, so they always build th
 npm ci
 npm run dev      # http://localhost:4321/
 npm run build && npm test
+npx playwright install chromium   # once
+npm run test:e2e   # loads the index in Chromium: it opens at the top, the title below the header
 ```
 
 A push to `main` deploys to GitHub Pages (`.github/workflows/pages.yml`). To pick up a wicked-web

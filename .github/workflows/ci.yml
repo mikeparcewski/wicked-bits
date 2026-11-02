@@ -1,6 +1,7 @@
 name: CI
 
-# Builds the site and checks the result on every PR (tests/site.test.mjs).
+# Builds the site and checks the result on every PR (tests/site.test.mjs), then loads the index in
+# Chromium (tests/load.e2e.mjs).
 on:
   pull_request:
   workflow_dispatch:
@@ -34,3 +35,9 @@ jobs:
 
       - name: Check the built site
         run: npm test
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps --only-shell chromium
+
+      - name: Check the index loads at the top
+        run: npm run test:e2e

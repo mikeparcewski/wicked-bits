@@ -55,3 +55,11 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
     .bit { padding: 18px; }
   }
 </style>
+
+<style is:global>
+  /* The family chrome snaps (wicked-web tokens.css: html scroll-snap-type y proximity, in
+     @layer base) and the footer is a snap point. This page is barely taller than the viewport,
+     so Chrome snapped to the footer at load and hid the title under the header. Bits doesn't
+     snap; this unlayered rule wins over the layered one. */
+  html { scroll-snap-type: none; }
+</style>
