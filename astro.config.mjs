@@ -2,12 +2,12 @@ import { defineConfig } from 'astro/config';
 import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
-// Where the site is served: the one place to change it. Today it is the GitHub Pages project
-// URL, https://mikeparcewski.github.io/wicked-bits/. For bits.wickedagile.com, set
-// SITE = 'https://bits.wickedagile.com' and BASE = '/' and add public/CNAME (README, "Switch to
-// bits.wickedagile.com").
-const SITE = 'https://mikeparcewski.github.io';
-const BASE = '/wicked-bits/';
+// Where the site is served: the one place to change it. It is https://bits.wickedagile.com/, a
+// domain root, so BASE is '/' and public/CNAME names the domain (README, "The domain"). On the
+// Pages project URL it would be SITE = 'https://mikeparcewski.github.io', BASE = '/wicked-bits/'
+// and no CNAME.
+const SITE = 'https://bits.wickedagile.com';
+const BASE = '/';
 
 // Shared chrome lives in the `wicked-web` package. Develop against the local
 // source when it sits beside this repo (../wicked-web), otherwise (CI) resolve

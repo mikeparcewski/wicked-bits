@@ -1,17 +1,17 @@
 # wicked bits
 
-Interactive pieces and media from Wicked Agile, at **https://mikeparcewski.github.io/wicked-bits/**
-(bits.wickedagile.com once its DNS record exists; see [the switch](#switch-to-bitswickedagilecom)).
+Interactive pieces and media from Wicked Agile, at **https://bits.wickedagile.com/**
+(see [the domain](#the-domain)).
 
 | Bit | Kind | Path |
 |---|---|---|
-| The Work: the one-shift factory | Interactive | [`the-work-factory/`](https://mikeparcewski.github.io/wicked-bits/the-work-factory/) |
+| The Work: the one-shift factory | Interactive | [`the-work-factory/`](https://bits.wickedagile.com/the-work-factory/) |
 
 ## Post a bit
 
 1. Put the piece in its own folder under `public/`, as `public/<slug>/index.html` (plus any files it loads).
-   It is served exactly as committed; the build does not touch it. Use relative links inside it, since the
-   site may sit under a path (`/wicked-bits/`). `npm test` checks that every `href`, `src`, `srcset`, CSS
+   It is served exactly as committed; the build does not touch it. Use relative links inside it, so it keeps
+   working if the site moves under a path (as it was at `/wicked-bits/`). `npm test` checks that every `href`, `src`, `srcset`, CSS
    `url()` and `@import` in the bit's `index.html` stays under the base and exists. It doesn't yet read
    media attributes such as `poster` or `object data`, HTML files nested in the bit, or a `<base href>`
    ([#2](https://github.com/mikeparcewski/wicked-bits/issues/2)), so check those by eye if a bit uses them.
@@ -28,38 +28,34 @@ source instead; CI and the deploy have no such checkout, so they always build th
 
 ```bash
 npm ci
-npm run dev      # http://localhost:4321/wicked-bits/
+npm run dev      # http://localhost:4321/
 npm run build && npm test
 ```
 
 A push to `main` deploys to GitHub Pages (`.github/workflows/pages.yml`). To pick up a wicked-web
 change, install its exact commit: `npm install "github:mikeparcewski/wicked-web#<40-char sha>"`.
 
-## Switch to bits.wickedagile.com
+## The domain
 
-The address lives in two places, each a single value: `SITE` and `BASE` in `astro.config.mjs` (this
-site), and `BITS` in wicked-web's `src/data/family.js` (the family header, footer and promo card).
+The site is served at https://bits.wickedagile.com/, set in three places:
 
-1. **Protect the name.** Verify `wickedagile.com` for the account first: GitHub Settings → Pages →
-   Add a verified domain, then add the TXT record it gives (`_github-pages-challenge-mikeparcewski`) in
-   Route 53. Without it, another account could claim `bits.wickedagile.com` between step 2's DNS record
-   and step 4's Pages setting. (As of 2026-11-02 there is no such TXT record.)
-2. **DNS (Route 53, the wickedagile.com zone):** UPSERT `bits.wickedagile.com` as a `CNAME` to
-   `mikeparcewski.github.io`, with the TTL the `wc` and `wg` records use. Check it resolves:
-   `dig +short bits.wickedagile.com`.
-3. **wicked-web:** set `BITS = 'https://bits.wickedagile.com/'` (the promo's `LATEST_BIT.href` follows it)
-   and merge. Nothing changes on any site until it re-pins.
-4. **This repo, one PR, merged right after the domain is set:** set `SITE = 'https://bits.wickedagile.com'`
-   and `BASE = '/'`, add `public/CNAME` with the line `bits.wickedagile.com` (`npm test` checks a CNAME
-   ships exactly when `BASE` is `'/'`), re-pin wicked-web to step 3's commit, and update the URLs at the
-   top of this README. Once its CI is green, set the custom domain and merge straight away:
-   `gh api -X PUT repos/mikeparcewski/wicked-bits/pages -f cname=bits.wickedagile.com`.
-   An Actions deploy takes the domain from this setting, not the CNAME file. Between the setting and the
-   deploy, the domain serves the old `/wicked-bits/` paths, so keep that gap to minutes. The github.io
-   URL then redirects to the domain.
-5. **HTTPS:** wait for the certificate (`gh api repos/mikeparcewski/wicked-bits/pages --jq
-   .https_certificate.state` reads `approved`), then enforce it, keeping the domain in the same call:
-   `gh api -X PUT repos/mikeparcewski/wicked-bits/pages -f cname=bits.wickedagile.com -F https_enforced=true`.
-6. **The family sites:** re-pin wicked-web in each, so their header, footer and promo point at the domain.
-7. **Verify** with a cache-buster (the Pages CDN lags about 10 minutes):
-   `https://bits.wickedagile.com/?cb=1` and `https://bits.wickedagile.com/the-work-factory/?cb=1` serve 200.
+- **DNS** (Route 53, the wickedagile.com zone): `bits.wickedagile.com` is a `CNAME` to
+  `mikeparcewski.github.io`, TTL 300, like the sibling `wc` and `we` records.
+- **Pages** (`gh api repos/mikeparcewski/wicked-bits/pages`): the custom domain is `bits.wickedagile.com`,
+  with HTTPS enforced. An Actions deploy takes the domain from this setting, not from `public/CNAME`.
+  The github.io URL redirects to the domain. To change the setting, keep the domain in the same call:
+  `gh api -X PUT repos/mikeparcewski/wicked-bits/pages -f cname=bits.wickedagile.com -F https_enforced=true`.
+- **This repo:** `SITE` and `BASE` (`'/'`, a domain root) in `astro.config.mjs`, and `public/CNAME`
+  (`npm test` checks a CNAME ships exactly when `BASE` is `'/'`). A new Pages setting serves the last
+  deploy at the new address, built for the old `BASE`, so to move the site, merge the matching
+  `SITE`/`BASE` change within minutes of changing the setting.
+
+The family header, footer and promo card take the address from `BITS` in wicked-web's
+`src/data/family.js`; each family site follows when it re-pins wicked-web.
+
+To protect the name, verify `wickedagile.com` for the account: GitHub Settings → Pages → Add a verified
+domain, then add the TXT record it gives (`_github-pages-challenge-mikeparcewski`) in Route 53. (As of
+2026-11-02 there is no such TXT record.)
+
+Check the site with a cache-buster, since the Pages CDN lags about 10 minutes:
+`https://bits.wickedagile.com/?cb=1` and `https://bits.wickedagile.com/the-work-factory/?cb=1` serve 200.
