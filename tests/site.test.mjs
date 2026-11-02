@@ -2,6 +2,9 @@
 // The index lists every bit in src/data/bits.js under the site's base, nothing on the index, its
 // stylesheets or a bit points outside the base or at a missing file, each bit is served byte for byte
 // as posted, and a CNAME ships exactly when the site sits at a domain root.
+// Scope: href, src, srcset, CSS url() and @import in the index, its stylesheets and each bit's
+// index.html. Media attributes (poster, object data), HTML nested in a bit and <base href> are not
+// read yet (issue #2; the README's "Post a bit" says to check them by eye).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';

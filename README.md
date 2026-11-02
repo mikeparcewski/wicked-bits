@@ -11,7 +11,10 @@ Interactive pieces and media from Wicked Agile, at **https://mikeparcewski.githu
 
 1. Put the piece in its own folder under `public/`, as `public/<slug>/index.html` (plus any files it loads).
    It is served exactly as committed; the build does not touch it. Use relative links inside it, since the
-   site may sit under a path (`/wicked-bits/`).
+   site may sit under a path (`/wicked-bits/`). `npm test` checks that every `href`, `src`, `srcset`, CSS
+   `url()` and `@import` in the bit's `index.html` stays under the base and exists. It doesn't yet read
+   media attributes such as `poster` or `object data`, HTML files nested in the bit, or a `<base href>`
+   ([#2](https://github.com/mikeparcewski/wicked-bits/issues/2)), so check those by eye if a bit uses them.
 2. Add one entry, newest first, to `src/data/bits.js` (`slug`, `kind`, `title`, `desc`).
 3. To feature it in the family footer's promo card, change `LATEST_BIT` in wicked-web's
    `src/data/family.js`, then re-pin wicked-web in the family sites.
