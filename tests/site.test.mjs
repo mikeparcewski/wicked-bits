@@ -2,15 +2,16 @@
 // The index lists every bit in src/data/bits.js under the site's base, nothing on the index, its
 // stylesheets or a bit points outside the base or at a missing file, each bit is served byte for byte
 // as posted, a CNAME ships exactly when the site sits at a domain root, the header is the family's
-// product path (wicked-web bc5ca29 on), and package.json and the lockfile pin the same wicked-web.
+// product path (wicked-web bc5ca29 on), package.json and the lockfile pin the same wicked-web, and the
+// built CSS has no media-query range syntax.
 // Scope: href, src, srcset, CSS url() and @import in the index, its stylesheets and each bit's
 // index.html. Media attributes (poster, object data), HTML nested in a bit and <base href> are not
 // read yet (issue #2; the README's "Post a bit" says to check them by eye).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { existsSync, readFileSync } from 'node:fs';
-import { dirname, join, resolve, sep } from 'node:path';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import config from '../astro.config.mjs';
 import { BITS } from '../src/data/bits.js';
@@ -178,9 +179,12 @@ test('the background art is the committed SVG, masked onto a fixed body::before 
   const art = rules.filter((r) => r.sel === 'body:before' && /mask:url\(/.test(r.body));
   assert.equal(art.length, 1, 'one body::before rule carries the art mask');
   const d = art[0].body;
-  for (const decl of ['position:fixed', 'inset:0', 'z-index:-2', 'pointer-events:none', 'background-color:var(--ink)', 'background-image:none', 'opacity:.08']) {
+  for (const decl of ['position:fixed', 'z-index:-2', 'pointer-events:none', 'background-color:var(--ink)', 'background-image:none', 'opacity:.08']) {
     assert.ok(d.includes(decl), `body::before has ${decl}`);
   }
+  // inset:0, or its four longhands where the CSS targets predate inset (Safari 14.0, the cssTarget's floor)
+  const decls = d.split(';').map((x) => x.trim());
+  assert.ok(decls.includes('inset:0') || ['top:0', 'right:0', 'bottom:0', 'left:0'].every((x) => decls.includes(x)), 'body::before covers the viewport (inset 0)');
   assert.ok(!/animation/.test(d), 'the art never moves');
   const urls = [...d.matchAll(/mask:url\(([^)]+)\)/g)].map((m) => m[1]);
   assert.equal(urls.length, 2, 'the -webkit- and the standard mask');
@@ -195,4 +199,43 @@ test('the background art is the committed SVG, masked onto a fixed body::before 
   const cond = css.slice(gate, css.indexOf('{', gate));
   assert.match(cond, /color-mix\(/, 'the gate requires color-mix');
   assert.match(cond, /mask/, 'the gate requires a mask');
+});
+
+// Safari before 16.4 ignores media-query range syntax (`(width <= 760px)`), so on those iPhones the site keeps its
+// desktop layout. The build's CSS minifier rewrites max-width and min-width into that syntax unless the CSS targets
+// name an older Safari (astro.config.mjs, vite.build.cssTarget; wicked-web#63). This reads what ships: every
+// dist/**/*.css and every inline <style> in dist/**/*.html, posted bits included. A media query's prelude is the text
+// between @media and its `{`, comments dropped (a commented-out rule is no rule, and a comment can hold a `{`); range
+// syntax is the only way a `<` or `>` gets there.
+const preludes = (css) => [...css.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/@media([^{]*)\{/gi)].map((m) => m[1].trim());
+const ranged = (css) => preludes(css).filter((p) => /[<>]/.test(p));
+const walk = (d) => readdirSync(d, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(join(d, e.name)) : [join(d, e.name)]));
+
+test('the range check catches each form the minifier writes, and passes min-width and max-width', () => {
+  for (const css of ['@media (width<=760px){a{b:c}}', '@media (width >= 40rem) {', '@media (400px<=width<=800px){',
+    '@media screen and (width>600px){', '@media (height<640px){', '@media (min-width:0),(width<1px){',
+    '@media /* { */ (width <= 760px){body{color:red}}']) {
+    assert.equal(ranged(css).length, 1, css);
+  }
+  for (const css of ['@media (max-width:760px){', '@media (min-width: 40rem) and (max-width: 60rem) {',
+    '@media (prefers-reduced-motion:no-preference){', '@media screen and (max-height:640px){',
+    '/* @media (width > 760px) { } */ a{b:c}']) {
+    assert.deepEqual(ranged(css), [], css);
+  }
+});
+
+test('the built CSS uses min-width and max-width, never range syntax Safari before 16.4 ignores (wicked-web#63)', () => {
+  html(); // needs dist
+  const files = walk(DIST).filter((f) => /\.(css|html)$/.test(f));
+  assert.ok(files.some((f) => f.endsWith('.css')), 'the build ships a stylesheet');
+  let read = 0;
+  const bad = [];
+  for (const f of files) {
+    const text = readFileSync(f, 'utf8');
+    const css = f.endsWith('.html') ? [...text.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/gi)].map((m) => m[1]).join('\n') : text;
+    read += preludes(css).length;
+    for (const q of ranged(css)) bad.push(`${relative(DIST, f)}: @media ${q}`);
+  }
+  assert.ok(read > 0, 'the scan read media queries (or it checks nothing)');
+  assert.deepEqual(bad, []);
 });
