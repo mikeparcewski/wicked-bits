@@ -22,5 +22,10 @@ export default defineConfig({
   output: 'static',
   // Astro's HTML compression deletes the space before inline tags (<b>, <code>) and fuses words.
   compressHTML: false,
-  vite: { resolve: { alias } },
+  vite: {
+    resolve: { alias },
+    // Safari before 16.4 ignores media-query range syntax (`width <= 760px`), so the minifier must keep min-width and
+    // max-width: the CSS targets name the oldest browsers the site supports (wicked-web#63, wickedagile#71).
+    build: { cssTarget: ['chrome100', 'edge100', 'firefox100', 'safari14'] },
+  },
 });
