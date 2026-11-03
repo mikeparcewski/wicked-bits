@@ -37,6 +37,16 @@ npm run test:e2e   # loads the index in Chromium: it opens at the top, the title
 A push to `main` deploys to GitHub Pages (`.github/workflows/pages.yml`). To pick up a wicked-web
 change, install its exact commit: `npm install "github:mikeparcewski/wicked-web#<40-char sha>"`.
 
+## The background art
+
+`src/art/bits-bg.svg` is the background art behind the page: media and play (a film strip, the player, a
+waveform, the play button, ones and zeros, the factory belt, a controller, headphones, a clapperboard,
+an edit timeline, the pointer, a film reel). Like the product sites, it is a mask: black strokes on
+nothing, painted in the page's ink by one fixed `body::before` at 0.08 (0.06 in light), and it never
+moves. A veil of the page colour behind the text column and inside the footer keeps the art at 40% or
+less under any text. `npm test` checks the built rule and the emitted file; `npm run test:e2e` checks
+that the art shifts the ground under text by no more than a 4% ink line, in both themes.
+
 ## The domain
 
 The site is served at https://bits.wickedagile.com/, set in three places:

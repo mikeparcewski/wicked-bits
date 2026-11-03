@@ -1,0 +1,111 @@
+<svg width="1600" height="900" viewBox="0 0 1600 900" xmlns="http://www.w3.org/2000/svg">
+<!-- wicked bits background art: media and play, one bit at a time. A mask: black strokes on nothing,
+     painted in the page's ink by src/pages/index.astro. Same grammar as the product sites' line art. -->
+<g fill="none" stroke="black" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+  <!-- connectors: dashed wires with arrowheads, dashed drops ending in a node -->
+  <path d="M326 168 H554" stroke-dasharray="5 9"/><path d="M546 162 l8 6 l-8 6"/>
+  <path d="M782 168 H990" stroke-dasharray="5 9"/><path d="M982 162 l8 6 l-8 6"/>
+  <path d="M1196 170 H1350" stroke-dasharray="5 9"/><path d="M1342 164 l8 6 l-8 6"/>
+  <path d="M340 478 H540" stroke-dasharray="5 9"/><path d="M532 472 l8 6 l-8 6"/>
+  <path d="M826 488 H1014" stroke-dasharray="5 9"/><path d="M1006 482 l8 6 l-8 6"/>
+  <path d="M320 752 H500" stroke-dasharray="5 9"/><path d="M492 746 l8 6 l-8 6"/>
+  <path d="M752 740 H900" stroke-dasharray="5 9"/><path d="M892 734 l8 6 l-8 6"/>
+  <path d="M1016 744 H1280" stroke-dasharray="5 9"/><path d="M1272 738 l8 6 l-8 6"/>
+  <path d="M226 226 V402" stroke-dasharray="6 10"/><circle cx="226" cy="408" r="5"/>
+  <path d="M668 232 V418" stroke-dasharray="6 10"/><circle cx="668" cy="424" r="5"/>
+  <path d="M1094 224 V424" stroke-dasharray="6 10"/><circle cx="1094" cy="430" r="5"/>
+  <path d="M1456 236 V428" stroke-dasharray="6 10"/><circle cx="1456" cy="434" r="5"/>
+  <path d="M238 534 V644" stroke-dasharray="6 10"/><circle cx="238" cy="650" r="5"/>
+  <path d="M640 556 V646" stroke-dasharray="6 10"/><circle cx="640" cy="652" r="5"/>
+  <path d="M960 572 V650" stroke-dasharray="6 10"/><circle cx="960" cy="656" r="5"/>
+  <path d="M470 600 l9 10 l16 -22"/><path d="M806 620 l9 10 l16 -22"/><path d="M1250 330 l9 10 l16 -22"/>
+  <circle cx="1530" cy="300" r="6"/><circle cx="64" cy="560" r="6"/><circle cx="1040" cy="610" r="6"/>
+
+  <!-- film strip: sprockets and three frames, a play mark in the middle one -->
+  <g transform="translate(140 110)">
+    <rect width="172" height="100" rx="10" stroke-width="1.8"/>
+    <path d="M12 8 h12 v9 h-12 Z M36 8 h12 v9 h-12 Z M60 8 h12 v9 h-12 Z M84 8 h12 v9 h-12 Z M108 8 h12 v9 h-12 Z M132 8 h12 v9 h-12 Z M156 8 h6"/>
+    <path d="M12 83 h12 v9 h-12 Z M36 83 h12 v9 h-12 Z M60 83 h12 v9 h-12 Z M84 83 h12 v9 h-12 Z M108 83 h12 v9 h-12 Z M132 83 h12 v9 h-12 Z M156 83 h6"/>
+    <rect x="10" y="26" width="46" height="48" rx="4"/><rect x="63" y="26" width="46" height="48" rx="4"/><rect x="116" y="26" width="46" height="48" rx="4"/>
+    <path d="M80 40 l14 10 l-14 10 Z"/>
+  </g>
+  <!-- the player: a play disc over the picture, a scrubber with its knob -->
+  <g transform="translate(570 96)">
+    <rect width="196" height="122" rx="12" stroke-width="1.8"/>
+    <circle cx="98" cy="50" r="22"/><path d="M91 39 L108 50 L91 61 Z"/>
+    <path d="M16 96 H180"/><path d="M16 96 H70" stroke-width="3"/><circle cx="70" cy="96" r="5"/>
+    <path d="M16 108 H36 M154 108 H180"/>
+  </g>
+  <!-- a waveform: one bar at a time -->
+  <g transform="translate(1010 120)" stroke-width="1.8">
+    <path d="M0 45 V55 M12 39 V61 M24 31 V69 M36 22 V78 M48 35 V65 M60 15 V85 M72 28 V72 M84 8 V92 M96 24 V76 M108 18 V82 M120 36 V64 M132 27 V73 M144 41 V59 M156 33 V67 M168 44 V56"/>
+  </g>
+  <!-- the play button, with its loading ring -->
+  <g transform="translate(1370 110)">
+    <circle cx="60" cy="60" r="44" stroke-width="1.8"/><circle cx="60" cy="60" r="56" stroke-dasharray="4 8"/>
+    <path d="M48 38 L84 60 L48 82 Z" stroke-width="1.8"/>
+  </g>
+  <!-- bits: ones and zeros on a card -->
+  <g transform="translate(150 420)">
+    <rect width="176" height="100" rx="12" stroke-width="1.8"/>
+    <path d="M24 27 L28 22 V46"/><ellipse cx="58" cy="34" rx="8" ry="12"/><path d="M84 27 L88 22 V46"/><path d="M114 27 L118 22 V46"/><ellipse cx="148" cy="34" rx="8" ry="12"/>
+    <ellipse cx="28" cy="68" rx="8" ry="12"/><path d="M54 61 L58 56 V80"/><ellipse cx="88" cy="68" rx="8" ry="12"/><ellipse cx="118" cy="68" rx="8" ry="12"/><path d="M144 61 L148 56 V80"/>
+  </g>
+  <!-- the factory belt: jobs riding a conveyor, the last one done -->
+  <g transform="translate(560 440)">
+    <rect x="0" y="40" width="250" height="36" rx="18" stroke-width="1.8"/>
+    <circle cx="18" cy="58" r="11"/><circle cx="232" cy="58" r="11"/><circle cx="76" cy="58" r="4"/><circle cx="125" cy="58" r="4"/><circle cx="174" cy="58" r="4"/>
+    <rect x="34" y="12" width="32" height="28" rx="3"/><rect x="96" y="4" width="40" height="36" rx="3"/><path d="M116 4 V16"/><rect x="166" y="16" width="28" height="24" rx="3"/>
+    <path d="M206 6 l6 7 l12 -16"/>
+    <path d="M40 76 V100 M210 76 V100 M26 100 H224"/>
+  </g>
+  <!-- a game controller: d-pad, four buttons, two pills -->
+  <g transform="translate(1040 440)">
+    <path d="M40 10 H140 C168 10 180 40 186 70 C192 100 176 116 160 110 C148 106 140 92 126 88 H54 C40 92 32 106 20 110 C4 116 -12 100 -6 70 C0 40 12 10 40 10 Z" stroke-width="1.8"/>
+    <path d="M38 38 h12 v12 h12 v12 h-12 v12 h-12 v-12 h-12 v-12 h12 Z"/>
+    <circle cx="136" cy="44" r="7"/><circle cx="152" cy="60" r="7"/><circle cx="120" cy="60" r="7"/><circle cx="136" cy="76" r="7"/>
+    <rect x="76" y="50" width="14" height="6" rx="3"/><rect x="96" y="50" width="14" height="6" rx="3"/>
+  </g>
+  <!-- headphones -->
+  <g transform="translate(1390 450)">
+    <path d="M10 66 V56 C10 20 40 0 66 0 C92 0 122 20 122 56 V66"/>
+    <rect x="0" y="62" width="24" height="44" rx="10" stroke-width="1.8"/><rect x="108" y="62" width="24" height="44" rx="10" stroke-width="1.8"/>
+  </g>
+  <!-- a clapperboard -->
+  <g transform="translate(150 690)">
+    <rect x="0" y="30" width="156" height="100" rx="8" stroke-width="1.8"/>
+    <g transform="rotate(-8 0 30)"><rect x="0" y="8" width="156" height="20" rx="3"/><path d="M34 8 l-14 20 M66 8 l-14 20 M98 8 l-14 20 M130 8 l-14 20"/></g>
+    <path d="M16 62 H96 M16 82 H136 M16 102 H72"/>
+  </g>
+  <!-- an edit timeline: a ruler, three tracks of clips, the playhead -->
+  <g transform="translate(520 670)">
+    <rect width="214" height="124" rx="12" stroke-width="1.8"/>
+    <path d="M16 18 v8 M40 18 v5 M64 18 v8 M88 18 v5 M136 18 v8 M160 18 v5 M184 18 v8"/>
+    <rect x="16" y="38" width="70" height="18" rx="5"/><rect x="118" y="38" width="62" height="18" rx="5"/>
+    <rect x="30" y="64" width="66" height="18" rx="5"/><rect x="124" y="64" width="74" height="18" rx="5"/>
+    <rect x="16" y="90" width="40" height="18" rx="5"/><rect x="64" y="90" width="34" height="18" rx="5"/><rect x="124" y="90" width="58" height="18" rx="5"/>
+    <path d="M110 14 V114" stroke-width="1.8"/><path d="M103 8 h14 l-7 8 Z"/>
+  </g>
+  <!-- the pointer: an interactive piece, clicked -->
+  <g transform="translate(930 690)">
+    <path d="M20 20 L20 82 L36 66 L48 92 L60 86 L48 61 L70 61 Z" stroke-width="1.8"/>
+    <path d="M20 6 V-4 M8 10 l-7 -7 M32 10 l7 -7 M6 22 H-4"/>
+  </g>
+  <!-- a film reel, its tail running off -->
+  <g transform="translate(1300 670)">
+    <circle cx="70" cy="70" r="56" stroke-width="1.8"/><circle cx="70" cy="70" r="7"/>
+    <circle cx="70" cy="40" r="12"/><circle cx="98.5" cy="60.7" r="12"/><circle cx="87.6" cy="94.3" r="12"/><circle cx="52.4" cy="94.3" r="12"/><circle cx="41.5" cy="60.7" r="12"/>
+    <path d="M70 126 H166 C184 126 192 114 192 98"/>
+  </g>
+  <!-- pixels -->
+  <g transform="translate(1474 600)">
+    <rect x="0" y="0" width="10" height="10" rx="1.5"/><rect x="28" y="0" width="10" height="10" rx="1.5"/><rect x="14" y="14" width="10" height="10" rx="1.5"/>
+    <rect x="0" y="28" width="10" height="10" rx="1.5"/><rect x="14" y="28" width="10" height="10" rx="1.5"/><rect x="28" y="28" width="10" height="10" rx="1.5"/>
+  </g>
+</g>
+<g fill="black">
+  <circle cx="420" cy="300" r="2.5"/><circle cx="433" cy="300" r="2.5"/><circle cx="446" cy="300" r="2.5"/>
+  <circle cx="880" cy="330" r="2.5"/><circle cx="893" cy="330" r="2.5"/><circle cx="906" cy="330" r="2.5"/>
+  <circle cx="1180" cy="858" r="2.5"/><circle cx="1193" cy="858" r="2.5"/><circle cx="1206" cy="858" r="2.5"/>
+</g>
+</svg>
