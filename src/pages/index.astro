@@ -82,15 +82,19 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
      connectors. The product sites' engine and register: ONE fixed layer painted in --ink through its
      line-art mask (stroke 1.4, outlines 1.8), centred and cover-sized, at 0.08 (0.06 in light), so it
      recolours with the theme. It replaces wicked-web's line grid on this layer; it never moves, under
-     any motion setting. The mask is a file Vite resolves (base-aware, same origin). */
-  body::before {
-    content: ''; position: fixed; inset: 0; z-index: -2; pointer-events: none;
-    background-color: var(--ink); background-image: none;
-    opacity: 0.08;
-    -webkit-mask: url('../art/bits-bg.svg') center / cover no-repeat;
-            mask: url('../art/bits-bg.svg') center / cover no-repeat;
+     any motion setting. The mask is a file Vite resolves (base-aware, same origin). Only where the veils
+     below can be drawn (color-mix) and the mask works: an older browser keeps wicked-web's layer rather
+     than getting the art without its veil, or the ink as a solid block. */
+  @supports (color: color-mix(in oklab, red 50%, blue)) and ((mask: none) or (-webkit-mask: none)) {
+    body::before {
+      content: ''; position: fixed; inset: 0; z-index: -2; pointer-events: none;
+      background-color: var(--ink); background-image: none;
+      opacity: 0.08;
+      -webkit-mask: url('../art/bits-bg.svg') center / cover no-repeat;
+              mask: url('../art/bits-bg.svg') center / cover no-repeat;
+    }
+    [data-theme="light"] body::before { opacity: 0.06; }
   }
-  [data-theme="light"] body::before { opacity: 0.06; }
   /* The family footer (wicked-web) is 92% page colour over a blur of what is behind it, so the art at
      full strength would tint it a level more than the old grid did. A stronger veil (85%) inside the
      footer's own stacking context (its backdrop-filter makes one): above its background, below its text. */

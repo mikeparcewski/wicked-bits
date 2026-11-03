@@ -188,4 +188,11 @@ test('the background art is the committed SVG, masked onto a fixed body::before 
   assert.match(urls[0], new RegExp(`^${BASE}_astro/bits-bg\\.[\\w-]+\\.svg$`), 'the art is emitted under the base');
   assert.equal(sha(toDist(new URL(urls[0], PAGE))), sha(join(ROOT, 'src/art/bits-bg.svg')), 'the emitted art is the committed file');
   assert.ok(rules.some((r) => /^\[data-theme=["']?light["']?\]\s*body:before$/.test(r.sel) && r.body.includes('opacity:.06')), 'light theme: 0.06');
+  // only where the veil can be drawn (color-mix) and masks work; elsewhere wicked-web's layer stays
+  const at = css.indexOf(art[0].body);
+  const gate = css.lastIndexOf('@supports', at);
+  assert.ok(gate >= 0 && !css.slice(gate, at).includes('}'), 'the art rule sits inside an @supports block');
+  const cond = css.slice(gate, css.indexOf('{', gate));
+  assert.match(cond, /color-mix\(/, 'the gate requires color-mix');
+  assert.match(cond, /mask/, 'the gate requires a mask');
 });
