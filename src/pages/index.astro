@@ -40,7 +40,18 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
 </Base>
 
 <style>
-  .bits { padding-top: calc(var(--topbar-h) + 72px); padding-bottom: 96px; min-height: 70svh; }
+  .bits { position: relative; padding-top: calc(var(--topbar-h) + 72px); padding-bottom: 96px; min-height: 70svh; }
+  /* The veil (crew's, as an element): the page colour behind the text column, with a soft edge, so the
+     background art reads at 40% under any text (0.032 of ink in dark, 0.024 in light, below the 0.04
+     line grid this page wore before) and at full strength only around it. It sits above the art
+     (z -2) and below wicked-web's glow (body::after, later in the tree), so the glow is unchanged. */
+  .bits::before {
+    content: ''; position: absolute; z-index: -1; pointer-events: none;
+    top: calc(var(--topbar-h) + 72px); bottom: 96px; left: clamp(16px, 4vw, 28px);
+    width: min(720px, 100% - 2 * clamp(16px, 4vw, 28px));
+    --veil: color-mix(in oklab, var(--canvas) 60%, transparent);
+    background: var(--veil); border-radius: 16px; box-shadow: 0 0 32px 32px var(--veil);
+  }
   .bits-title { font-size: var(--text-display); font-weight: var(--weight-strong); letter-spacing: var(--tracking-title); line-height: 1.1; color: var(--ink); }
   .bits-intro { margin-top: 14px; font-size: var(--text-lead); color: var(--muted); max-width: 60ch; }
   .bits-list { list-style: none; margin-top: 40px; display: grid; gap: 16px; max-width: 720px; }
@@ -53,6 +64,7 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
   .bit:hover .bit-cta { color: var(--accent); }
   @media (max-width: 600px) {
     .bits { padding-top: calc(var(--topbar-h) + 40px); padding-bottom: 64px; }
+    .bits::before { top: calc(var(--topbar-h) + 40px); bottom: 64px; }
     .bit { padding: 18px; }
   }
 </style>
@@ -63,4 +75,28 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
      so Chrome snapped to the footer at load and hid the title under the header. Bits doesn't
      snap; this unlayered rule wins over the layered one. */
   html { scroll-snap-type: none; }
+
+  /* bits' background art (src/art/bits-bg.svg): media and play, one bit at a time. A film strip, the
+     player, a waveform and the play button; ones and zeros, the factory belt of The Work, a controller
+     and headphones; a clapperboard, an edit timeline, the pointer and a film reel, wired by dashed
+     connectors. The product sites' engine and register: ONE fixed layer painted in --ink through its
+     line-art mask (stroke 1.4, outlines 1.8), centred and cover-sized, at 0.08 (0.06 in light), so it
+     recolours with the theme. It replaces wicked-web's line grid on this layer; it never moves, under
+     any motion setting. The mask is a file Vite resolves (base-aware, same origin). */
+  body::before {
+    content: ''; position: fixed; inset: 0; z-index: -2; pointer-events: none;
+    background-color: var(--ink); background-image: none;
+    opacity: 0.08;
+    -webkit-mask: url('../art/bits-bg.svg') center / cover no-repeat;
+            mask: url('../art/bits-bg.svg') center / cover no-repeat;
+  }
+  [data-theme="light"] body::before { opacity: 0.06; }
+  /* The family footer (wicked-web) is 92% page colour over a blur of what is behind it, so the art at
+     full strength would tint it a level more than the old grid did. A stronger veil (85%) inside the
+     footer's own stacking context (its backdrop-filter makes one): above its background, below its text. */
+  html body .footer { position: relative; }
+  html body .footer::before {
+    content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+    background: color-mix(in oklab, var(--canvas) 85%, transparent);
+  }
 </style>

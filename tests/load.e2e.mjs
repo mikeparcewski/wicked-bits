@@ -135,3 +135,77 @@ test('the theme is Wicked Dark until a click, which stores wa-theme-v3 and survi
     await ctx.close();
   }
 });
+
+// The background art (src/art/bits-bg.svg). It sits behind everything (a fixed body::before at z -2,
+// not clickable, never animated, 0.08 of the ink in dark and 0.06 in light), causes no sideways scroll,
+// and never darkens or lightens the ground under text by more than the 4% ink line grid this page wore
+// before it: the veil behind the text column and inside the footer holds it to 40% there. Measured, with
+// the text hidden, as the largest channel change the art makes under any text box, art on vs art off,
+// at the top of the page and at its end.
+const TEXT_RECTS = () => {
+  const out = []; const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  for (let n = w.nextNode(); n; n = w.nextNode()) {
+    if (!n.textContent.trim() || getComputedStyle(n.parentElement).visibility !== 'visible') continue;
+    const r = document.createRange(); r.selectNodeContents(n);
+    for (const q of r.getClientRects()) {
+      if (q.width >= 4 && q.height >= 6 && q.bottom > 0 && q.top < innerHeight) out.push({ x: q.left, y: q.top, w: q.width, h: q.height, t: n.textContent.trim().slice(0, 30) });
+    }
+  }
+  return out;
+};
+const MAX_DIFF = async ({ on, off, rects }) => {
+  const load = async (b64) => { const i = new Image(); i.src = `data:image/png;base64,${b64}`; await i.decode(); const c = document.createElement('canvas'); c.width = i.width; c.height = i.height; const g = c.getContext('2d', { willReadFrequently: true }); g.drawImage(i, 0, 0); return g; };
+  const [a, b] = [await load(on), await load(off)];
+  let worst = { d: 0, t: '' };
+  for (const r of rects) {
+    const x = Math.max(0, Math.floor(r.x)), y = Math.max(0, Math.floor(r.y));
+    const w = Math.min(a.canvas.width, Math.ceil(r.x + r.w)) - x, h = Math.min(a.canvas.height, Math.ceil(r.y + r.h)) - y;
+    if (w < 1 || h < 1) continue;
+    const da = a.getImageData(x, y, w, h).data, db = b.getImageData(x, y, w, h).data;
+    for (let i = 0; i < da.length; i += 4) {
+      const d = Math.max(Math.abs(da[i] - db[i]), Math.abs(da[i + 1] - db[i + 1]), Math.abs(da[i + 2] - db[i + 2]));
+      if (d > worst.d) worst = { d, t: r.t };
+    }
+  }
+  return worst;
+};
+const rgb = (page, v) => page.evaluate((v) => { const e = document.createElement('i'); e.style.color = `var(${v})`; document.body.append(e); const c = getComputedStyle(e).color; e.remove(); return c.match(/[\d.]+/g).slice(0, 3).map(Number); }, v);
+
+for (const [width, height] of [[1440, 900], [390, 844], [320, 640]]) {
+  for (const theme of ['dark', 'light']) {
+    test(`the background art sits behind the page and keeps text contrast (${width}x${height}, ${theme})`, async () => {
+      const phone = width < 600;
+      const ctx = await browser.newContext({ viewport: { width, height }, isMobile: phone, hasTouch: phone, deviceScaleFactor: 1 });
+      await ctx.addInitScript((t) => localStorage.setItem('wa-theme-v3', t), theme);
+      const page = await ctx.newPage();
+      const lab = await ctx.newPage();
+      try {
+        await page.goto(`${origin}${BASE}`, { waitUntil: 'networkidle' });
+        await page.evaluate(() => document.fonts.ready);
+        const art = await page.evaluate(() => { const s = getComputedStyle(document.body, '::before'); return { position: s.position, z: s.zIndex, pe: s.pointerEvents, opacity: s.opacity, mask: s.maskImage || s.webkitMaskImage, anim: s.animationName }; });
+        assert.deepEqual([art.position, art.z, art.pe, art.anim], ['fixed', '-2', 'none', 'none']);
+        assert.equal(art.opacity, theme === 'dark' ? '0.08' : '0.06');
+        assert.match(art.mask, /bits-bg\.[\w-]+\.svg/);
+        assert.ok(await page.evaluate(() => Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) <= innerWidth), 'no sideways scroll');
+        const [ink, canvas] = [await rgb(page, '--ink'), await rgb(page, '--canvas')];
+        const limit = Math.ceil(0.04 * Math.max(...ink.map((c, i) => Math.abs(c - canvas[i])))) + 1;
+        await page.addStyleTag({ content: '*,*::before,*::after{color:transparent!important;-webkit-text-fill-color:transparent!important;text-shadow:none!important} svg{visibility:hidden!important}' });
+        for (const where of ['top', 'end']) {
+          await page.evaluate((w) => scrollTo(0, w === 'top' ? 0 : document.documentElement.scrollHeight), where);
+          await page.waitForTimeout(150);
+          const rects = await page.evaluate(TEXT_RECTS);
+          const on = (await page.screenshot()).toString('base64');
+          const off = await page.addStyleTag({ content: 'body::before{display:none!important}' });
+          await page.waitForTimeout(100);
+          const offShot = (await page.screenshot()).toString('base64');
+          await off.evaluate((el) => el.remove());
+          const worst = await lab.evaluate(MAX_DIFF, { on, off: offShot, rects });
+          assert.ok(rects.length > 0, `text on screen at the ${where}`);
+          assert.ok(worst.d <= limit, `at the ${where}, the art shifts the ground under "${worst.t}" by ${worst.d} (limit ${limit}, a 4% ink line)`);
+        }
+      } finally {
+        await ctx.close();
+      }
+    });
+  }
+}

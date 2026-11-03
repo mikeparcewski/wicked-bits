@@ -165,3 +165,27 @@ test('package.json and package-lock.json pin the same wicked-web commit', () => 
   assert.equal(lock.packages[''].dependencies['wicked-web'], pkg.dependencies['wicked-web']);
   assert.ok(lock.packages['node_modules/wicked-web'].resolved.endsWith(`#${pin[1]}`), 'the lockfile resolves that commit');
 });
+
+// The background art (src/art/bits-bg.svg): one fixed layer behind the page, painted in the ink through
+// the art as a mask, like the product sites. Vite emits the file under the base; the index's stylesheet
+// must carry it on body::before, at 0.08 (0.06 in light), below the veil and the glow (z -2), and the
+// emitted file must be the committed art.
+test('the background art is the committed SVG, masked onto a fixed body::before at 0.08 (0.06 light)', () => {
+  const page = html();
+  const css = [...page.matchAll(/<link rel="stylesheet" href="([^"]+)"/g)]
+    .map(([, href]) => readFileSync(toDist(new URL(href, PAGE)), 'utf8')).join('\n');
+  const rules = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map(([, sel, body]) => ({ sel: sel.trim(), body }));
+  const art = rules.filter((r) => r.sel === 'body:before' && /mask:url\(/.test(r.body));
+  assert.equal(art.length, 1, 'one body::before rule carries the art mask');
+  const d = art[0].body;
+  for (const decl of ['position:fixed', 'inset:0', 'z-index:-2', 'pointer-events:none', 'background-color:var(--ink)', 'background-image:none', 'opacity:.08']) {
+    assert.ok(d.includes(decl), `body::before has ${decl}`);
+  }
+  assert.ok(!/animation/.test(d), 'the art never moves');
+  const urls = [...d.matchAll(/mask:url\(([^)]+)\)/g)].map((m) => m[1]);
+  assert.equal(urls.length, 2, 'the -webkit- and the standard mask');
+  assert.equal(new Set(urls).size, 1, 'both masks are the same file');
+  assert.match(urls[0], new RegExp(`^${BASE}_astro/bits-bg\\.[\\w-]+\\.svg$`), 'the art is emitted under the base');
+  assert.equal(sha(toDist(new URL(urls[0], PAGE))), sha(join(ROOT, 'src/art/bits-bg.svg')), 'the emitted art is the committed file');
+  assert.ok(rules.some((r) => /^\[data-theme=["']?light["']?\]\s*body:before$/.test(r.sel) && r.body.includes('opacity:.06')), 'light theme: 0.06');
+});
