@@ -1,7 +1,8 @@
 // Checks the built site (run `npm run build` first): node --test tests/site.test.mjs
 // The index lists every bit in src/data/bits.js under the site's base, nothing on the index, its
 // stylesheets or a bit points outside the base or at a missing file, each bit is served byte for byte
-// as posted, and a CNAME ships exactly when the site sits at a domain root.
+// as posted, a CNAME ships exactly when the site sits at a domain root, the header is the family's
+// product path (wicked-web bc5ca29 on), and package.json and the lockfile pin the same wicked-web.
 // Scope: href, src, srcset, CSS url() and @import in the index, its stylesheets and each bit's
 // index.html. Media attributes (poster, object data), HTML nested in a bit and <base href> are not
 // read yet (issue #2; the README's "Post a bit" says to check them by eye).
@@ -126,4 +127,41 @@ test('every bit is served as posted: dist matches public byte for byte', () => {
 test('a CNAME ships exactly when the site sits at a domain root (BASE "/")', () => {
   // On the Pages project URL a CNAME would redirect visitors to a domain that may not resolve yet.
   assert.equal(existsSync(join(ROOT, 'dist/CNAME')), BASE === '/');
+});
+
+// The family chrome (wicked-web bc5ca29 on): the header is the product path "Wicked Agile / labs /
+// wicked-bits", three links, and the flask links the lab. The old chrome's Experiments menu
+// (#projectsBtn / #projectsMenu) is gone, and the theme is stored under 'wa-theme-v3'.
+// On the old pin (cecfe2e) the header had no Breadcrumb path and still carried the menu.
+const attr = (attrs, name) => attrs.match(new RegExp(String.raw`\b${name}="([^"]*)"`))?.[1] ?? null;
+test('the header is the family path Wicked Agile / labs / wicked-bits, and the flask links the lab', () => {
+  const page = html();
+  const header = page.match(/<header class="topbar">([\s\S]*?)<\/header>/);
+  assert.ok(header, 'the index carries the family header');
+  const crumbs = header[1].match(/<nav class="crumbs" aria-label="Breadcrumb">([\s\S]*?)<\/nav>/);
+  assert.ok(crumbs, 'the header carries the Breadcrumb path');
+  const links = [...crumbs[1].matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/g)].map(([, attrs, inner]) => ({
+    href: attr(attrs, 'href'), label: attr(attrs, 'aria-label'), current: attr(attrs, 'aria-current'),
+    text: inner.replace(/<[^>]*>/g, '').trim(),
+  }));
+  assert.equal(links.length, 3, 'three links');
+  assert.deepEqual([links[0].href, links[0].label], ['https://wickedagile.com/', 'Wicked Agile']);
+  assert.deepEqual([links[1].href, links[1].text], ['https://wickedlabs.ai/', 'labs']);
+  // the last crumb is this site's home, and on the index it is the current page. The Topbar links '/'
+  // because wicked-web's family manifest lists no wicked-bits site (its not-in-manifest fallback);
+  // if the manifest gains one, this crumb takes that href and this check needs the new address.
+  assert.deepEqual([links[2].href, links[2].text, links[2].current], [BASE, 'wicked-bits', 'page']);
+  const flask = [...header[1].matchAll(/<a\b([^>]*)>/g)].map(([, a]) => a).filter((a) => attr(a, 'aria-label') === 'Wicked Labs');
+  assert.deepEqual(flask.map((a) => attr(a, 'href')), ['https://wickedlabs.ai/'], 'one flask, linking the lab');
+  assert.doesNotMatch(page, /id="projects(Btn|Menu)"/, 'the Experiments menu is gone');
+  assert.match(page, /'wa-theme-v3'/, 'the theme is read from wa-theme-v3');
+});
+
+test('package.json and package-lock.json pin the same wicked-web commit', () => {
+  const pkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'));
+  const lock = JSON.parse(readFileSync(join(ROOT, 'package-lock.json'), 'utf8'));
+  const pin = pkg.dependencies['wicked-web'].match(/^github:mikeparcewski\/wicked-web#([0-9a-f]{40})$/);
+  assert.ok(pin, 'wicked-web is pinned by a 40-char commit');
+  assert.equal(lock.packages[''].dependencies['wicked-web'], pkg.dependencies['wicked-web']);
+  assert.ok(lock.packages['node_modules/wicked-web'].resolved.endsWith(`#${pin[1]}`), 'the lockfile resolves that commit');
 });
