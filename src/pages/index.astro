@@ -18,7 +18,8 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
   description="Interactive pieces and media from Wicked Agile, one bit at a time."
   favicon={`${base}favicon.svg`}
 >
-  <Topbar pkg="bits" repo={REPO} />
+  <!-- the family path "Wicked Agile / labs / wicked-bits"; the last crumb is this site's home -->
+  <Topbar pkg="wicked-bits" repo={REPO} />
   <main class="wrap bits">
     <h1 class="bits-title">wicked bits</h1>
     <p class="bits-intro">Interactive pieces and media from Wicked Agile, one bit at a time.</p>
