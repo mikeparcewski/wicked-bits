@@ -28,6 +28,11 @@ button{font:inherit;cursor:pointer}
 button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var(--amber);outline-offset:4px}
 a{color:inherit}
 [hidden]{display:none!important}
+/* Nothing animates while nobody can see it: a station under a quarter on screen, or any station in a hidden tab,
+   carries data-offscreen and every CSS animation in it pauses (the script at the end). The page never follows
+   the machines' motion either: no scroll anchoring. */
+html{overflow-anchor:none}
+:is([data-offscreen],[data-offscreen] *),:is([data-offscreen],[data-offscreen] *)::before,:is([data-offscreen],[data-offscreen] *)::after{animation-play-state:paused!important}
 #progress{position:fixed;z-index:100;top:0;left:0;height:3px;width:0%;pointer-events:none;background:linear-gradient(90deg,var(--amber),var(--mint));box-shadow:0 0 12px var(--mint)}
 .topbar{max-width:764px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:19px 19px 8px}
 .wordmark{display:flex;align-items:center;gap:8px;text-decoration:none;font-size:13px;letter-spacing:-.035em;font-weight:1000;white-space:nowrap}
@@ -887,7 +892,7 @@ function render(){
    const memory=kit.querySelectorAll('.kit-row')[1];if(!memory)return;
    memory.classList.remove('memory-focus');void memory.offsetWidth;memory.classList.add('memory-focus');
    memory.scrollIntoView({behavior:reduce()?'auto':'smooth',block:'center'});
-   window.setTimeout(()=>memory.classList.remove('memory-focus'),2600);
+   later(memory,()=>memory.classList.remove('memory-focus'),2600);
   });
   message.append(a)
  }
@@ -911,12 +916,19 @@ function orderDrop(){
  const packet=el('div','loading-ticket','↧');packet.setAttribute('aria-hidden','true');floor.append(packet);
  const paper=floor.querySelector('.order-paper');paper.classList.remove('ticket-flash');void paper.offsetWidth;paper.classList.add('ticket-flash');
  $('dock-status').textContent='✓ '+DOORS[state.door]+' → WORK ORDER ACCEPTED';
- setTimeout(()=>packet.remove(),1160);setTimeout(()=>paper.classList.remove('ticket-flash'),780);playSound('drop');
+ later(floor,()=>packet.remove(),1160);later(floor,()=>paper.classList.remove('ticket-flash'),780);playSound('drop');
 }
 let scanTimer=null;
+// the one-shot effects of a click (a scan, a ticket, a stamp) belong to their station: when it leaves the
+// screen or the tab is hidden they land at once, and one meant for a station already held (a job picked in
+// Receive starts Route's scan) lands at once too, instead of finishing where nobody can see it
+const pending=new Map();
+function later(el,fn,ms){const room=el&&el.closest('main > section');if(room&&room.hasAttribute('data-offscreen')){fn();return null}const t=setTimeout(()=>{pending.delete(t);fn()},ms);pending.set(t,{room,fn});return t}
+function cancel(t){if(t!==null){clearTimeout(t);pending.delete(t)}}
+function landAll(room){pending.forEach((p,t)=>{if(p.room===room){clearTimeout(t);pending.delete(t);p.fn()}})}
 function runScanner(){
  const sorter=$('sorter-machine');sorter.classList.remove('scanning');void sorter.offsetWidth;sorter.classList.add('scanning');$('scan-status').textContent='▥ SCANNING WORK SHAPE · SELECTING ONLY WHAT IS NEEDED';
- clearTimeout(scanTimer);scanTimer=setTimeout(()=>{sorter.classList.remove('scanning');$('scan-status').textContent='✓ RECIPE READY · '+JOBS[state.job].crew.length+' TEMPORARY AI WORKERS';},1050);playSound('scan')
+ cancel(scanTimer);scanTimer=later(sorter,()=>{sorter.classList.remove('scanning');$('scan-status').textContent='✓ RECIPE READY · '+JOBS[state.job].crew.length+' TEMPORARY AI WORKERS';},1050);playSound('scan')
 }
 function resetJob(){state.denied=false;state.halted=false;state.haltCargoTop=null;state.roundTwo=false;state.lessonChoice=null;render();runScanner();requestPaint()}
 document.querySelectorAll('[data-job]').forEach(button=>button.addEventListener('click',()=>{state.job=button.dataset.job;resetJob();orderDrop();celebrate(button,8)}));
@@ -932,8 +944,8 @@ lever.addEventListener('pointerup',()=>{leverGesture=null;if(!state.halted)lever
 lever.addEventListener('pointercancel',()=>{leverGesture=null;lever.style.setProperty('--pull','0px')});
 lever.addEventListener('click',()=>{if(!suppressLeverClick)pullShortcut()});
 $('resume-line').addEventListener('click',()=>{state.halted=false;state.haltCargoTop=null;lever.style.setProperty('--pull','0px');render();requestPaint();const d=$('denied');d.querySelector('.denied-title').textContent='✓ APPROVED ROUTE RESTORED';celebrate(d,9);playSound('approved')});
-$('qc-stamp').addEventListener('click',()=>{const btn=$('qc-stamp'),receipt=$('quality-receipt');btn.classList.remove('stamping');receipt.classList.remove('just-stamped');void btn.offsetWidth;btn.classList.add('stamping');receipt.classList.add('just-stamped');celebrate(btn,10);playSound('stamp');setTimeout(()=>{btn.classList.remove('stamping');receipt.classList.remove('just-stamped')},850)});
-for(const name of ['good','bad'])$('lesson-'+name).addEventListener('click',()=>{state.lessonChoice=name;render();celebrate($('lesson-'+name),name==='good'?11:4);const v=$('memory-verdict');v.classList.add('celebrate');setTimeout(()=>v.classList.remove('celebrate'),570);playSound(name==='good'?'approved':'rejected')});
+$('qc-stamp').addEventListener('click',()=>{const btn=$('qc-stamp'),receipt=$('quality-receipt');btn.classList.remove('stamping');receipt.classList.remove('just-stamped');void btn.offsetWidth;btn.classList.add('stamping');receipt.classList.add('just-stamped');celebrate(btn,10);playSound('stamp');later(btn,()=>{btn.classList.remove('stamping');receipt.classList.remove('just-stamped')},850)});
+for(const name of ['good','bad'])$('lesson-'+name).addEventListener('click',()=>{state.lessonChoice=name;render();celebrate($('lesson-'+name),name==='good'?11:4);const v=$('memory-verdict');v.classList.add('celebrate');later(v,()=>v.classList.remove('celebrate'),570);playSound(name==='good'?'approved':'rejected')});
 $('run-next-shift').addEventListener('click',()=>{state.roundTwo=!state.roundTwo;render();celebrate($('run-next-shift'),state.roundTwo?17:5);playSound(state.roundTwo?'shift':'drop')});
 
 
@@ -963,9 +975,24 @@ function requestPaint(){if(!scrollTick){scrollTick=true;requestAnimationFrame(pa
 window.addEventListener('scroll',requestPaint,{passive:true});window.addEventListener('resize',requestPaint,{passive:true});
 
 if('IntersectionObserver'in window){
- const floorObserver=new IntersectionObserver(entries=>{entries.forEach(e=>e.target.classList.toggle('in-view',e.isIntersecting))},{threshold:.1});
+ // off screen (under a quarter of a station, or of the window for a tall one) or in a hidden tab: its loops pause
+ const rooms=[...document.querySelectorAll('main > section')],seen=new Set();
+ // leaving, one-shot animations land on their end and the station's pending effects land at once
+ const finish=x=>x.getAnimations({subtree:true}).forEach(a=>{const t=a.effect&&a.effect.getComputedTiming();if(t&&t.endTime!==Infinity&&a.playState==='running'){try{a.finish()}catch(e){}}});
+ const settle=x=>{landAll(x);finish(x)};
+ // a class another observer sets on a held station (in-view, fired) lands at once too, on the next frame
+ const landIfHeld=x=>{const room=x.closest('main > section');if(room&&room.hasAttribute('data-offscreen'))requestAnimationFrame(()=>finish(room))};
+ const was=new Set();
+ const mark=x=>{const live=seen.has(x)&&!document.hidden;if(!live&&was.has(x)){settle(x);requestAnimationFrame(()=>{if(!was.has(x))settle(x)})}if(live)was.add(x);else was.delete(x);x.toggleAttribute('data-offscreen',!live)};
+ const roomObserver=new IntersectionObserver(entries=>{entries.forEach(e=>{const share=Math.max(e.intersectionRatio,e.intersectionRect.height/Math.max(1,innerHeight));if(e.isIntersecting&&share>=.25)seen.add(e.target);else seen.delete(e.target);mark(e.target)})},{threshold:Array.from({length:101},(_,i)=>i/100)});
+ rooms.forEach(x=>{mark(x);roomObserver.observe(x)});
+ document.addEventListener('visibilitychange',()=>rooms.forEach(mark));
+ // the scroll paints the factory (the tower's lit floor, the cargo): in a held station that repaint lands at once
+ const paint=paintFactory;
+ paintFactory=function(){paint.apply(this,arguments);rooms.forEach(x=>{if(x.hasAttribute('data-offscreen'))requestAnimationFrame(()=>finish(x))})};
+ const floorObserver=new IntersectionObserver(entries=>{entries.forEach(e=>{e.target.classList.toggle('in-view',e.isIntersecting);landIfHeld(e.target)})},{threshold:.1});
  document.querySelectorAll('.station').forEach(x=>floorObserver.observe(x));
- const machineObserver=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('fired');machineObserver.unobserve(e.target)}})},{threshold:.28});
+ const machineObserver=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('fired');landIfHeld(e.target);machineObserver.unobserve(e.target)}})},{threshold:.28});
  const wire=()=>document.querySelectorAll('.employee,.requirement,.line-step,.proof,.shift-card').forEach(x=>machineObserver.observe(x));
  const oldRender=render;
  render=()=>{oldRender();wire()};

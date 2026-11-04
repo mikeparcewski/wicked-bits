@@ -9,7 +9,7 @@
     "preview": "astro preview",
     "astro": "astro",
     "test": "node --test tests/site.test.mjs",
-    "test:e2e": "node --test tests/load.e2e.mjs"
+    "test:e2e": "node --test tests/load.e2e.mjs tests/offscreen.e2e.mjs"
   },
   "dependencies": {
     "astro": "^7.3.2",
