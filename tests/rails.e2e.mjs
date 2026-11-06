@@ -63,6 +63,17 @@ const PLACES = () => [...document.querySelectorAll('body *')]
   .filter((e) => e.matches('a,button,summary,input,select,textarea,[role=button],[tabindex]') ||
     ['fixed', 'sticky'].includes(getComputedStyle(e).position))
   .map((e) => { const r = e.getBoundingClientRect(); return [e.id || e.className || e.tagName, Math.round(r.x), Math.round(r.y + scrollY), Math.round(r.width), Math.round(r.height)].join(' '); });
+/** PLACES once it holds still: a scroll's own effects (the reading-progress bar's width) land a frame or more later */
+async function settled(page) {
+  let last = await page.evaluate(PLACES);
+  for (let i = 0; i < 40; i++) {
+    await page.waitForTimeout(100);
+    const now = await page.evaluate(PLACES);
+    if (JSON.stringify(now) === JSON.stringify(last)) return now;
+    last = now;
+  }
+  assert.fail('the page never held still');
+}
 const NO_RAILS = 'html{background:var(--bg)!important}body{max-width:none!important;box-shadow:none!important}';
 
 async function open(slug, width, height, scheme) {
@@ -85,7 +96,7 @@ for (const b of BITS) {
           assert.equal(body.x, (width - STAGE) / 2, 'and centred');
           const edge = (width - STAGE) / 2;
           for (const where of ['top', 'middle', 'end']) {
-            await page.evaluate((w) => scrollTo(0, w === 'top' ? 0 : w === 'end' ? document.documentElement.scrollHeight : document.documentElement.scrollHeight / 2), where);
+            await page.evaluate((w) => scrollTo({ top: w === 'top' ? 0 : w === 'end' ? document.documentElement.scrollHeight : document.documentElement.scrollHeight / 2, behavior: 'instant' }), where);
             await page.waitForTimeout(150);
             const ys = [24, height >> 1, height - 3]; // clear of the reading-progress bar and its glow, which span the window as before
             const rails = await pixels(page, ys.flatMap((y) => [[2, y], [edge - 3, y], [width - edge + 2, y], [width - 3, y]]));
@@ -97,6 +108,22 @@ for (const b of BITS) {
       });
     }
   }
+
+  test(`${b.slug}: below a short stage the root keeps the bit's ground in the middle, rails at the sides (1920x1080)`, async () => {
+    const { ctx, page } = await open(b.slug, 1920, 1080, 'dark');
+    try {
+      // cut the stage down to 200px, so the root shows below the body (an overscroll looks the same)
+      await page.addStyleTag({ content: 'body>*{display:none!important}body{height:200px!important;min-height:0!important}' });
+      const bottom = await page.evaluate(() => document.body.getBoundingClientRect().bottom);
+      assert.ok(bottom < 1000, `the body ends (at ${bottom}) above the bottom of the window`);
+      const bg = await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--bg').trim());
+      const [r, g, b2] = [1, 3, 5].map((i) => parseInt(bg.slice(i, i + 2), 16));
+      const [left, middle, right] = await pixels(page, [[100, 1070], [960, 1070], [1820, 1070]]);
+      assert.deepEqual(left, [0, 0, 0], 'left rail');
+      assert.deepEqual(right, [0, 0, 0], 'right rail');
+      assert.deepEqual(middle, [r, g, b2], `the middle is the bit's ground (${bg}), not a black band`);
+    } finally { await ctx.close(); }
+  });
 
   for (const [width, height] of [[1440, 900], [390, 844]]) {
     test(`${b.slug}: no rails at ${width}x${height}; the stage fills the window`, async () => {
@@ -115,13 +142,11 @@ for (const b of BITS) {
       const { ctx, page } = await open(b.slug, width, height, 'dark');
       try {
         for (const where of [0, 0.4]) {
-          await page.evaluate((f) => scrollTo(0, f * document.documentElement.scrollHeight), where);
-          await page.waitForTimeout(150);
-          const railed = await page.evaluate(PLACES);
+          await page.evaluate((f) => scrollTo({ top: f * document.documentElement.scrollHeight, behavior: 'instant' }), where);
+          const railed = await settled(page);
           assert.ok(railed.length > 5, 'the bit has controls to check');
           const style = await page.addStyleTag({ content: NO_RAILS });
-          await page.waitForTimeout(100);
-          const bare = await page.evaluate(PLACES);
+          const bare = await settled(page);
           assert.deepEqual(railed, bare, `scrolled to ${where * 100}%: every control and HUD is where it is without rails`);
           await style.evaluate((s) => s.remove());
         }
