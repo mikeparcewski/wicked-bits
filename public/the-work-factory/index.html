@@ -508,6 +508,17 @@ button.bot-head{cursor:pointer;padding:0;font:inherit;min-width:0;color:#174151;
  .desktop-floors a{position:relative;justify-content:center;gap:0;min-width:29px;min-height:37px;padding:6px 5px}
  .desktop-floors a i{position:absolute;right:3px;margin:0;width:4px;height:4px}
 }
+/* The stage is 1440px wide (the floor elevator already sits at its right edge). Wider than that, black rails fill
+   the space either side, so the factory reads as a framed piece rather than floating in empty ground. The body is
+   the stage: it keeps its own colours and is centred; the root paints the rails, with the stage colour in the middle
+   so an overscroll or a short page never shows a black band. Every shell is narrower than the stage and centred, so
+   nothing moves; the fixed HUD (progress bar, elevator) keeps its place. The bit is dark-only, so the rails are black
+   in any theme. At 1440px and under (a phone included) there are no rails. */
+html{background:linear-gradient(90deg,#000 calc(50% - 720px),var(--bg) calc(50% - 720px) calc(50% + 720px),#000 calc(50% + 720px))}
+body{max-width:min(100%,1440px);margin-inline:auto}
+@media(min-width:1441px){
+ body{box-shadow:0 0 0 1px rgba(133,213,190,.08)}
+}
 
 
 

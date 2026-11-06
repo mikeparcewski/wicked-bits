@@ -1,7 +1,7 @@
 name: CI
 
-# Builds the site and checks the result on every PR (tests/site.test.mjs), then loads the index in
-# Chromium (tests/load.e2e.mjs).
+# Builds the site and checks the result on every PR (tests/site.test.mjs), then loads the index and the bits in
+# Chromium (tests/*.e2e.mjs: the index opens at the top, the bit pauses off screen, and each bit has its rails).
 on:
   pull_request:
   workflow_dispatch:
@@ -39,5 +39,5 @@ jobs:
       - name: Install Chromium
         run: npx playwright install --with-deps --only-shell chromium
 
-      - name: Check the index loads at the top
+      - name: Check the index and the bits in Chromium
         run: npm run test:e2e
