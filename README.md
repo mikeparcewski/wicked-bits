@@ -15,6 +15,12 @@ Interactive pieces and media from Wicked Agile, at **https://bits.wickedagile.co
    `url()` and `@import` in the bit's `index.html` stays under the base and exists. It doesn't yet read
    media attributes such as `poster` or `object data`, HTML files nested in the bit, or a `<base href>`
    ([#2](https://github.com/mikeparcewski/wicked-bits/issues/2)), so check those by eye if a bit uses them.
+   On a big screen a bit is a framed piece: its `body` is the stage, at most 1440px wide and centred, and the
+   root paints black rails either side (`html` background, black outside the centre 1440px, the bit's ground inside).
+   The rails stay black in any theme. At 1440px and under, a phone included, there are none. `npm run test:e2e`
+   checks every bit: black rails at 1920 and 2560 in both colour schemes (and the bit's ground, not black, below a
+   short stage), none at 1440 or 390, and no control, link or fixed HUD sits anywhere other than where it would
+   without them.
 2. Add one entry, newest first, to `src/data/bits.js` (`slug`, `kind`, `title`, `desc`).
 3. To feature it in the family footer's promo card, change `LATEST_BIT` in wicked-web's
    `src/data/family.js`, then re-pin wicked-web in the family sites.
@@ -31,7 +37,7 @@ npm ci
 npm run dev      # http://localhost:4321/
 npm run build && npm test
 npx playwright install chromium   # once
-npm run test:e2e   # loads the index in Chromium: it opens at the top, the title below the header
+npm run test:e2e   # in Chromium: the index opens at the top, the bit pauses off screen, and has its rails
 ```
 
 A push to `main` deploys to GitHub Pages (`.github/workflows/pages.yml`). To pick up a wicked-web
