@@ -63,11 +63,16 @@ const PLACES = () => [...document.querySelectorAll('body *')]
   .filter((e) => e.matches('a,button,summary,input,select,textarea,[role=button],[tabindex]') ||
     ['fixed', 'sticky'].includes(getComputedStyle(e).position))
   .map((e) => { const r = e.getBoundingClientRect(); return [e.id || e.className || e.tagName, Math.round(r.x), Math.round(r.y + scrollY), Math.round(r.width), Math.round(r.height)].join(' '); });
-/** PLACES once it holds still: a scroll's own effects (the reading-progress bar's width) land a frame or more later */
+/** PLACES once it holds still. A scroll's own effects (the reading-progress bar's width) land on a later frame, and
+ *  a headless browser may not draw one until something repaints, so each read fires the scroll handler and waits out
+ *  two frames first. */
+const FRAME = () => { dispatchEvent(new Event('scroll')); return new Promise((ok) => requestAnimationFrame(() => requestAnimationFrame(ok))); };
 async function settled(page) {
+  await page.evaluate(FRAME);
   let last = await page.evaluate(PLACES);
   for (let i = 0; i < 40; i++) {
     await page.waitForTimeout(100);
+    await page.evaluate(FRAME);
     const now = await page.evaluate(PLACES);
     if (JSON.stringify(now) === JSON.stringify(last)) return now;
     last = now;
