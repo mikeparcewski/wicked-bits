@@ -12,7 +12,7 @@
     "test:e2e": "node --test --test-concurrency=1 tests/load.e2e.mjs tests/offscreen.e2e.mjs tests/rails.e2e.mjs"
   },
   "dependencies": {
-    "astro": "^7.3.2",
+    "astro": "^7.4.12",
     "wicked-web": "github:mikeparcewski/wicked-web#ca4d0c0d8d338948c1aba113ab39bb3899a0a775"
   },
   "devDependencies": {
